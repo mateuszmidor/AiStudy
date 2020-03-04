@@ -5,6 +5,7 @@
 PYTHON=python3.7
 PIP=pip3.7
 
+# install virtualenv, tensorflow, matplotlib
 function setupEnv() {
   sudo $PIP install -U virtualenv  # system-wide install
   virtualenv --system-site-packages -p $PYTHON ./venv
@@ -17,12 +18,14 @@ function setupEnv() {
   deactivate # virtualenv
 }
 
+# train the model to recognize hand-written digits 0..9
 function trainModel() {
   source ./venv/bin/activate # virtualenv
     $PYTHON Training.py
   deactivate  # virtualenv
 }
 
+# use the trained model to recognize a digit from random digit image
 function runRecognize() {
   source ./venv/bin/activate # virtualenv
     $PYTHON Inference.py
