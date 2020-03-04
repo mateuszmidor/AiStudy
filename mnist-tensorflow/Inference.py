@@ -1,13 +1,14 @@
 from tensorflow import keras
 import numpy as np 
 import matplotlib.pyplot as plt 
+import random
 
 # fetch test data from MNIST
 mnist_digits = keras.datasets.mnist
 _, (test_images, test_labels) = mnist_digits.load_data()
 
 # select an image and relevant label. Scale image to range 0..1 by dividing by 255.0
-testImageIndex = 1
+testImageIndex = random.randint(0, len(test_images))
 test_image = test_images[testImageIndex] / 255.0
 actual_label = test_labels[testImageIndex]
 
@@ -28,7 +29,7 @@ plt.xticks([])
 plt.yticks([])
 plt.grid(False)
 plt.imshow(test_image, cmap=plt.cm.binary)
-plt.xlabel('Correct: ' + str(actual_label) + ', recognized: ' + str(predicted_label), fontsize=20)
+plt.xlabel('Correct: {}, recognized: {}, img index: {}'.format(actual_label, predicted_label, testImageIndex), fontsize=20)
 plt.show()
 
 # plt.savefig('img_' + str(testImageIndex) + '.png')

@@ -1,6 +1,6 @@
 from tensorflow import keras
 
-import numpy as py
+import numpy as np
 import matplotlib.pyplot as plt
 
 # fetch the mnist numbers model
@@ -24,7 +24,7 @@ for i in range(rowCount * colCount):
 
     # print digits and their labels
     plt.imshow(train_images[i], cmap=plt.cm.binary)
-    plt.xlabel(class_names[train_labels[i])
+    plt.xlabel(class_names[train_labels[i]])
 
 plt.show()
 
@@ -49,10 +49,12 @@ model = keras.Sequential([
 # setup learing process
 model.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
 
+# print model info
 model.summary()
 
 # learn
-mode.fit(train_images, train_labels, epochs=10)
+model.fit(train_images, train_labels, epochs=10)
 
+# save model
 modelOutputPath = 'trained_model'
 model.save(modelOutputPath, save_format='tf')

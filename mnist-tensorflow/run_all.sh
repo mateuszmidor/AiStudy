@@ -1,6 +1,35 @@
 #!/usr/bin/env bash
 
-source ./venv/bin/activate  # enable the virtualenv
-python Training.py
-python Inference.py
-deactivate  # don't exit until you're done using TensorFlow
+# use python 3.7 and pip3.7 to be compatible with latest tensorflow 2.1.0 (as of 03.03.2020)
+# it is safe to install python3.7 with: pamac build python37
+PYTHON=python3.7
+PIP=pip3.7
+
+function setupEnv() {
+  sudo $PIP install -U virtualenv  # system-wide install
+  virtualenv --system-site-packages -p $PYTHON ./venv
+  source ./venv/bin/activate # virtualenv
+      $PIP install --user --upgrade pip
+      $PIP install --user tensorflow 
+      $PIP install --user matplotlib
+      echo "TensorFlow test:"
+      $PYTHON -c "import tensorflow as tf;print(tf.reduce_sum(tf.random.normal([1000, 1000])))"
+  deactivate # virtualenv
+}
+
+function trainModel() {
+  source ./venv/bin/activate # virtualenv
+    $PYTHON Training.py
+  deactivate  # virtualenv
+}
+
+function runRecognize() {
+  source ./venv/bin/activate # virtualenv
+    $PYTHON Inference.py
+  deactivate  # virtualenv
+}
+
+
+[[ ! -d venv ]] && setupEnv
+[[ ! -d trained_model ]] && trainModel
+[[ -d trained_model ]] && runRecognize
