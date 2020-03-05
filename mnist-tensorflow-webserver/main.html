@@ -1,0 +1,93 @@
+
+<!DOCTYPE HTML>
+<html>
+    <script src="https://code.jquery.com/jquery-latest.min.js"></script>
+  <head>
+    <style>
+      body {
+        margin: 0px;
+        padding: 0px;
+      }
+    </style>
+  </head>
+  <body data-rsssl=1>
+    <div id="workarea" style="text-align:center; margin: auto; width: 280px;">
+        <div id="paint" style="margin: auto; width: 280px; height: 280px; border:1px solid black;">
+            <canvas id="myCanvas"></canvas>
+        </div>
+        <div style="font-size: 20px; text-align:center;" id="result">-</div>
+        <button type="button" value="Clear" onclick="onClear()">Clear</button>
+    </div>
+    <script>
+var canvas = document.getElementById('myCanvas');
+var ctx = canvas.getContext('2d');
+ 
+var painting = document.getElementById('paint');
+var paint_style = getComputedStyle(painting);
+canvas.width = parseInt(paint_style.getPropertyValue('width'));
+canvas.height = parseInt(paint_style.getPropertyValue('height'));
+
+var mouse = {x: 0, y: 0};
+ 
+canvas.addEventListener('mousemove', function(e) {
+  mouse.x = e.pageX - this.offsetLeft;
+  mouse.y = e.pageY - this.offsetTop;
+}, false);
+
+ctx.fillStyle = "#FFFFFF";
+ctx.lineWidth = 10;
+ctx.lineJoin = 'round';
+ctx.lineCap = 'round';
+ctx.strokeStyle = '#000000';
+ 
+canvas.addEventListener('mousedown', function(e) {
+    ctx.beginPath();
+    ctx.moveTo(mouse.x, mouse.y);
+ 
+    canvas.addEventListener('mousemove', onPaint, false);
+}, false);
+ 
+canvas.addEventListener('mouseup', function() {
+    canvas.removeEventListener('mousemove', onPaint, false);
+    onCheckDigit();
+}, false);
+ 
+var onPaint = function() {
+    ctx.lineTo(mouse.x, mouse.y);
+    ctx.stroke();
+};
+
+var setResult = function(value) {
+  $( "#result" ).text(value);
+}
+
+var onClear = function() {
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    setResult("-")
+}
+
+var onCheckDigit = function() {
+  var canvasData = canvas.toDataURL("image/png");
+
+  $.ajax({
+        type:'POST',
+        url:'checkDigit',
+        dataType: 'json',
+        contentType: 'application/json',
+        data:canvasData,  
+        error:function() {
+          setResult("digit recognition error");
+        },
+        success:function(data) {
+          setResult(data.value);
+        }
+    });  
+  }
+
+  $( document ).ready( function(){
+  onClear();
+});
+
+    </script>
+  </body>
+</html>   
