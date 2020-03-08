@@ -10,9 +10,7 @@ def pngToGreyscale28x28x8bit(png : bytes) -> np.ndarray:
     LUMINOSITY = 'L'
 
     pngio = io.BytesIO(png)
-    img = Image.open(pngio).convert(LUMINOSITY)
-    img = PIL.ImageOps.invert(img) # this is needed, no time to investigate the reason now
-    img.thumbnail((28,28), PIL.Image.BOX)
-    # imgplot = plt.imshow(img, cmap=plt.cm.binary)
-    # plt.show()
+    img = Image.open(pngio)
+    img = img.convert(LUMINOSITY)
+    img.thumbnail((28,28), PIL.Image.LINEAR)
     return np.asarray(img)

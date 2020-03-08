@@ -5,7 +5,13 @@ def recognizeDigit(greyscale_28x28x8bit : np.ndarray) -> str:
     """ Input is numpy array 28x28 of type byte[0..255 range] """
 
     # prediction mechanism expects data in range 0..1
-    input_image = greyscale_28x28x8bit / 255.0
+    input_image = 1.0 -  greyscale_28x28x8bit / 255.0 # inveting is needed for proper recognition for unknown reason
+   
+    # print(input_image.shape)
+    # print(np.amin(greyscale_28x28x8bit))
+    # print(np.amax(greyscale_28x28x8bit))
+    # print(np.amin(input_image))
+    # print(np.amax(input_image))
 
     # tensorflow expects a series of images, so called "tensor". So we convert image into array of size 1x28x28
     input_image_for_tensorflow = np.expand_dims(input_image, 0)

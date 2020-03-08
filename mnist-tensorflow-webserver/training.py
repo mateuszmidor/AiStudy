@@ -8,25 +8,6 @@ mnist_digits = keras.datasets.mnist
 
 class_names = np.arange(10)
 
-# show training data
-# plt.figure()
-# rowCount = 10
-# colCount = 30
-# for i in range(rowCount * colCount):
-#     # draw single digit
-#     plt.subplot(rowCount, colCount, i+1) 
-
-#     # disable axis labels
-#     plt.xticks([])
-#     plt.yticks([])
-#     plt.grid(False)
-
-#     # print digits and their labels
-#     plt.imshow(train_images[i], cmap=plt.cm.binary)
-#     plt.xlabel(class_names[train_labels[i]])
-
-# plt.show()
-
 # convert greyscale 0..255 to float 0.0 .. 1.0
 train_images = train_images / 255.0
 
@@ -36,7 +17,7 @@ model = keras.Sequential([
     keras.layers.Flatten(input_shape=(28,28)),
 
     # hidden neural layer with 64 neurons and activation function tanh
-    # keras.layers.Dense(64, activation='tanh'),
+    keras.layers.Dense(64, activation='tanh'),
 
     # hidden neural layer with 128 neurons and activation function sigmoid
     keras.layers.Dense(128, activation='sigmoid'),
