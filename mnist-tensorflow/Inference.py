@@ -9,7 +9,16 @@ _, (test_images, test_labels) = mnist_digits.load_data()
 
 # select an image and relevant label. Scale image to range 0..1 by dividing by 255.0
 testImageIndex = random.randint(0, len(test_images))
-test_image = test_images[testImageIndex] / 255.0
+
+test_image = test_images[testImageIndex]
+plt.imshow(test_image, cmap=plt.cm.binary)
+print(test_image.shape)
+print(np.amin(test_image))
+print(np.amax(test_image))
+test_image = test_image / 255.0
+print(np.amin(test_image))
+print(np.amax(test_image))
+
 actual_label = test_labels[testImageIndex]
 
 # tensorflow expects a series of images, so called "tensor". So we convert image into array of size 1x28x28
