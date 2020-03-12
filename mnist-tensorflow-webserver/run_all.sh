@@ -16,7 +16,7 @@ function trainRecognitionModel() {
 
 # run recognition server at localhost:$HttpPort
 function runRecognitionServer() {
-  docker run -v `pwd`:/home -w /home -p 127.0.0.1:$HttpPort:$HttpPort $DockerImage python main.py $HttpPort &
+  docker run -v `pwd`:/home -w /home -p $HttpPort:$HttpPort $DockerImage python main.py $HttpPort &
   sleep 3
   firefox localhost:$HttpPort
   echo "Digit recognition server is running at localhost:$HttpPort. CTRL+C to exit..."
