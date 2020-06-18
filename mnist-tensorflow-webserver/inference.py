@@ -5,7 +5,7 @@ def recognizeDigit(greyscale_28x28x8bit : np.ndarray) -> str:
     """ Input is numpy array 28x28 of type byte[0..255 range] """
 
     # prediction mechanism expects data in range 0..1
-    input_image = 1.0 -  greyscale_28x28x8bit / 255.0 # inveting is needed for proper recognition for unknown reason
+    input_image = 1.0 -  greyscale_28x28x8bit / 255.0 # inveting is needed as model learns white digits on black background
    
     # print(input_image.shape)
     # print(np.amin(greyscale_28x28x8bit))
