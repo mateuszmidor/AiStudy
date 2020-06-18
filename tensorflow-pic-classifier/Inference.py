@@ -59,5 +59,3 @@ class Inference(object):
         # return label for highest probability 
         return self.labels[top_one]
 
-
-
