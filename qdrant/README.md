@@ -1,5 +1,7 @@
 # qdrant - vector database
 
+https://content.aidevs.pl/play/lekcja2_ibrfgh
+
 Run the database:
 
 ```sh
