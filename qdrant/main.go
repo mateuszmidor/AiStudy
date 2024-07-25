@@ -8,7 +8,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
+	"os/exec"
 	"time"
 )
 
@@ -43,11 +45,13 @@ type SearchQuery struct {
 	WithVectors bool      `json:"with_vectors"`
 }
 
-func addCollection(name string) error {
+func addCollection(name string, dimensions int) error {
+	slog.Info("add collection", slog.String("name", name), slog.Int("dimensions", dimensions))
+
 	// Example usage
 	config := FullConfig{
 		Vectors: VectorConfig{
-			Size:     4,
+			Size:     dimensions,
 			Distance: "Cosine",
 		},
 	}
@@ -88,6 +92,8 @@ func addCollection(name string) error {
 }
 
 func addPoint(collectionName string, vector []float64, text string) error {
+	slog.Info("add point", slog.String("collection_name", collectionName), slog.String("text", text))
+
 	payload := map[string]interface{}{
 		"text": text,
 	}
@@ -136,8 +142,10 @@ func generateMD5HashString(text string) string {
 	return hex.EncodeToString(h.Sum(nil))
 }
 
-func search(collectionName string, vector []float64) error {
-	q := SearchQuery{Vector: vector, Limit: 2, WithPayload: true}
+func search(collectionName string, vector []float64, text string) error {
+	slog.Info("search", slog.String("collection_name", collectionName), slog.String("text", text))
+
+	q := SearchQuery{Vector: vector, Limit: 1, WithPayload: true}
 
 	jsonData, err := json.Marshal(q)
 	if err != nil {
@@ -185,10 +193,40 @@ func PanicOnError(err error) {
 	}
 }
 
+func embed(input string) []float64 {
+	cmd := exec.Command("python", "./embedding-localhost/main.py", input)
+	output, err := cmd.Output()
+	PanicOnError(err)
+	var embedding []float64
+	PanicOnError(json.Unmarshal(output, &embedding))
+	return embedding
+}
+
+var knowledge = []string{
+	"Python is kind of snake",
+	"Python is lame programming language",
+	"C++ is programming language that produces fast programs",
+	"Rust is programming language that produces robust programs",
+}
+var questions = []string{
+	"Which programming language is fast?",
+	"Which programming language is robust?",
+	"What is Python?",
+}
+
 func main() {
-	PanicOnError(addCollection("dane"))
-	PanicOnError(addPoint("dane", []float64{-1, 0, 0, 1}, "ala ma kota"))
-	PanicOnError(addPoint("dane", []float64{-1, 0, 0, 0.9}, "ala ma psa"))
+	PanicOnError(addCollection("knowledge", 384))
+
+	// store embeddings in vector database
+	for _, s := range knowledge {
+		embedding := embed(s)
+		PanicOnError(addPoint("knowledge", embedding, s))
+	}
 	time.Sleep(time.Millisecond * 250)
-	PanicOnError(search("dane", []float64{-1, 0, 0, 1}))
+
+	// as database the questions
+	for _, q := range questions {
+		embedding := embed(q)
+		PanicOnError(search("knowledge", embedding, q))
+	}
 }
