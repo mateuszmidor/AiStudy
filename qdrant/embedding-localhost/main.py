@@ -9,6 +9,7 @@ import json
 model_name = 'paraphrase-MiniLM-L6-v2'  # 384 dimensions
 model = SentenceTransformer(model_name)
 
+# Usage: python main.py "My text to embed"
 def main():
     text = sys.argv[1]
     sentences = [text]
