@@ -192,8 +192,8 @@ func embed(input string) []float64 {
 var knowledge = []string{
 	"Python is kind of snake",
 	"C++ is programming language that produces fast programs",
-	"Rust is programming language that produces robust programs",
 	"Python is lame programming language",
+	"Rust is programming language that produces robust programs",
 	"Monty Python is a comedy show",
 }
 var questions = []string{
@@ -201,6 +201,7 @@ var questions = []string{
 	"Which programming language is robust?",
 	"What is Python?",
 	"Who is lame?",
+	"Do you know any comedy shows?",
 }
 
 func main() {
