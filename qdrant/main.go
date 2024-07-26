@@ -44,11 +44,28 @@ type SearchQuery struct {
 	WithVectors bool      `json:"with_vectors"`
 }
 
+// SearchResponse represents search response structure.
+// Example response:
+// {"result":[{"id":"9b31733d-aa7a-07e9-71a1-dd8110a83374","version":2,"score":0.7733528,"payload":{"text":"C++ is programming language that produces fast programs"}}],"status":"ok","time":0.001875241}
+type SearchResponse struct {
+	Result []struct {
+		ID      string  `json:"id"`
+		Version int     `json:"version"`
+		Score   float64 `json:"score"`
+		Payload struct {
+			Text string `json:"text"`
+		} `json:"payload"`
+	} `json:"result"`
+	Status string  `json:"status"`
+	Time   float64 `json:"time"`
+}
+
 const dbBaseURL = "http://localhost:6333/collections/"
+const collectionName = "knowledge"
 
 // addCollection creates new collection of entries in vector database
-func addCollection(name string, dimensions int) error {
-	slog.Info("add collection", slog.String("name", name), slog.Int("dimensions", dimensions))
+func addCollection(dimensions int) error {
+	slog.Info("add collection", slog.String("name", collectionName), slog.Int("dimensions", dimensions))
 
 	// Prepare database config
 	config := CollectionConfig{
@@ -59,7 +76,7 @@ func addCollection(name string, dimensions int) error {
 	}
 
 	// Send request
-	url := dbBaseURL + name
+	url := dbBaseURL + collectionName
 	_, err := request(url, "PUT", config)
 
 	// Return result
@@ -67,8 +84,8 @@ func addCollection(name string, dimensions int) error {
 }
 
 // addPoint adds new entry to collection
-func addPoint(collectionName string, vector []float64, text string) error {
-	slog.Info("add point", slog.String("collection_name", collectionName), slog.String("text", text))
+func addPoint(vector []float64, text string) error {
+	slog.Info("add point", slog.String("text", text))
 
 	// Prepare payload
 	payload := map[string]interface{}{
@@ -92,18 +109,29 @@ func addPoint(collectionName string, vector []float64, text string) error {
 }
 
 // search looks up database entries similar to provided vector
-func search(collectionName string, vector []float64, text string) (string, error) {
-	slog.Info("search", slog.String("collection_name", collectionName), slog.String("text", text))
+func search(vector []float64, text string) (*SearchResponse, error) {
+	slog.Info("search", slog.String("text", text))
 
 	// Prepare search query
 	query := SearchQuery{Vector: vector, Limit: 1, WithPayload: true}
 
 	// Send request
 	url := dbBaseURL + collectionName + "/points/search"
-	rsp, err := request(url, "POST", query)
+	rspString, err := request(url, "POST", query)
+
+	if err != nil {
+		return nil, err
+	}
+
+	// Deserialize response
+	var rsp *SearchResponse
+	err = json.Unmarshal([]byte(rspString), &rsp)
+	if err != nil {
+		return nil, err
+	}
 
 	// Return result
-	return rsp, err
+	return rsp, nil
 }
 
 // request is a helper func that sends http request to url with provided data, and returns the response as text
@@ -163,9 +191,10 @@ func embed(input string) []float64 {
 
 var knowledge = []string{
 	"Python is kind of snake",
-	"Python is lame programming language",
 	"C++ is programming language that produces fast programs",
 	"Rust is programming language that produces robust programs",
+	"Python is lame programming language",
+	"Monty Python is a comedy show",
 }
 var questions = []string{
 	"Which programming language is fast?",
@@ -179,19 +208,21 @@ func main() {
 	dimensions := len(embed("Check embeding dimensions"))
 
 	// create the collection in vector database
-	panicOnError(addCollection("knowledge", dimensions))
+	panicOnError(addCollection(dimensions))
 
 	// store embeddings in collection
-	for _, s := range knowledge {
-		embedding := embed(s)
-		panicOnError(addPoint("knowledge", embedding, s))
+	for _, k := range knowledge {
+		embedding := embed(k)
+		panicOnError(addPoint(embedding, k))
 	}
 
 	// ask database the questions
 	for _, q := range questions {
 		embedding := embed(q)
-		result, err := search("knowledge", embedding, q)
+		response, err := search(embedding, q)
 		panicOnError(err)
-		fmt.Println(result)
+		for _, r := range response.Result {
+			slog.Info("result", slog.String("payload", r.Payload.Text), slog.Float64("score", r.Score))
+		}
 	}
 }

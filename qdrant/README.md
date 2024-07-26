@@ -7,21 +7,24 @@ This demo calls python program to create embedings on local machine. Suggested b
 ## Run
 
 ```sh
-make install
+make install # may take a while, installs lots of Python's packages
 make run
 ```
 
 Result:
 ```log
-2024/07/25 23:59:01 INFO add collection name=dane dimensions=384
-2024/07/25 23:59:10 INFO add point collection_name=dane text="Python is kind of snake"
-2024/07/25 23:59:19 INFO add point collection_name=dane text="Python is lame programming language"
-2024/07/25 23:59:27 INFO add point collection_name=dane text="C++ is programming language that produces fast programs"
-2024/07/25 23:59:36 INFO add point collection_name=dane text="Rust is programming language that produces robust programs"
-2024/07/25 23:59:45 INFO search collection_name=dane text="Which programming language is fast?"
-{"result":[{"id":"9b31733d-aa7a-07e9-71a1-dd8110a83374","version":2,"score":0.7733528,"payload":{"text":"C++ is programming language that produces fast programs"}}],"status":"ok","time":0.001371117}
-2024/07/25 23:59:53 INFO search collection_name=dane text="Which programming language is robust?"
-{"result":[{"id":"21c04ccd-902c-8d2a-dd2b-459e977c76f6","version":3,"score":0.68962824,"payload":{"text":"Rust is programming language that produces robust programs"}}],"status":"ok","time":0.000554891}
-2024/07/26 00:00:02 INFO search collection_name=dane text="What is Python?"
-{"result":[{"id":"827dc662-14cc-e55e-a1a5-8ca7644a8fc0","version":0,"score":0.77888787,"payload":{"text":"Python is kind of snake"}}],"status":"ok","time":0.000523922}
+2024/07/26 10:27:33 INFO add collection name=knowledge dimensions=384
+2024/07/26 10:27:41 INFO add point text="Python is kind of snake"
+2024/07/26 10:27:49 INFO add point text="C++ is programming language that produces fast programs"
+2024/07/26 10:27:57 INFO add point text="Rust is programming language that produces robust programs"
+2024/07/26 10:28:05 INFO add point text="Python is lame programming language"
+2024/07/26 10:28:13 INFO add point text="Monty Python is a comedy show"
+2024/07/26 10:28:21 INFO search text="Which programming language is fast?"
+2024/07/26 10:28:21 INFO result payload="C++ is programming language that produces fast programs" score=0.7733528
+2024/07/26 10:28:29 INFO search text="Which programming language is robust?"
+2024/07/26 10:28:29 INFO result payload="Rust is programming language that produces robust programs" score=0.6896283
+2024/07/26 10:28:37 INFO search text="What is Python?"
+2024/07/26 10:28:37 INFO result payload="Python is kind of snake" score=0.7788878
+2024/07/26 10:28:45 INFO search text="Who is lame?"
+2024/07/26 10:28:45 INFO result payload="Python is lame programming language" score=0.4776154
 ```
