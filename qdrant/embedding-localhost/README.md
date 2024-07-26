@@ -5,7 +5,7 @@ Pretrained models: https://www.sbert.net/docs/sentence_transformer/pretrained_mo
 ## Run
 
 ```sh
-pip install -r requirements.txt
+pip install -U sentence-transformers
 python main.py "My sentence to be embedded"
 ```
 
