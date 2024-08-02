@@ -206,6 +206,7 @@ var questions = []string{
 
 func main() {
 	// determine vector size for collection; depends on pre-trained model used for embeding
+	slog.Info("determining embeding dimensions")
 	dimensions := len(embed("Check embeding dimensions"))
 
 	// create the collection in vector database
