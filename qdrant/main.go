@@ -10,6 +10,7 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+	"os"
 	"os/exec"
 )
 
@@ -175,7 +176,8 @@ func generateMD5HashString(text string) string {
 // panicOnError checks if the provided error is not nil and panics with that error.
 func panicOnError(err error) {
 	if err != nil {
-		panic(err)
+		slog.Error(err.Error())
+		os.Exit(1)
 	}
 }
 
