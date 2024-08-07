@@ -14,7 +14,7 @@ func main() {
 	}
 
 	joinedCaptions := strings.Join(captions, "\n")
-	prompt := fmt.Sprintf("Summarize the following text in bullet point format, you MUST respond in the same language as the source text.\nSource text:\n###\n%s\n###", joinedCaptions)
+	prompt := fmt.Sprintf("Summarize the following text in bullet point format, you MUST respond in Polish language.\nText:\n%s", joinedCaptions)
 	completion := ollamaGenerateCompletion(prompt)
 	fmt.Println(completion)
 }
