@@ -38,7 +38,7 @@ func main() {
 	lines := strings.Split(dataString, "\n")
 
 	// Post the answer for verification
-	err, msg := api.PostAnswer(taskName, lines, verifyURL)
+	err, msg := api.VerifyTaskAnswer(taskName, lines, verifyURL)
 	if err != nil {
 		logger.Error("Error posting answer", "error", err)
 		return

@@ -9,25 +9,25 @@ import (
 	"os"
 )
 
-// APIRequest represents the structure for API requests
-type APIRequest struct {
+// apiRequest represents the structure for API requests
+type apiRequest struct {
 	Task   string      `json:"task"`
 	APIKey string      `json:"apikey"`
 	Answer interface{} `json:"answer"`
 }
 
-// APIResponse represents the structure for API responses
-type APIResponse struct {
+// apiResponse represents the structure for API responses
+type apiResponse struct {
 	Code    int    `json:"code"`    // negative code means error
 	Message string `json:"message"` // response message
 }
 
-// PostAnswer sends task answer to the API and returns error and response message
-func PostAnswer(task string, answer interface{}, address string) (error, string) {
+// VerifyTaskAnswer sends task answer to the API and returns error and response message
+func VerifyTaskAnswer(task string, answer interface{}, verificationURL string) (error, string) {
 	client := &http.Client{}
 
 	// Create the request body
-	reqBody := APIRequest{
+	reqBody := apiRequest{
 		Task:   task,
 		APIKey: os.Getenv("AIDEVS3_API_KEY"),
 		Answer: answer,
@@ -40,7 +40,7 @@ func PostAnswer(task string, answer interface{}, address string) (error, string)
 	}
 
 	// Create the HTTP request
-	req, err := http.NewRequest("POST", address, bytes.NewBuffer(jsonBody))
+	req, err := http.NewRequest("POST", verificationURL, bytes.NewBuffer(jsonBody))
 	if err != nil {
 		return fmt.Errorf("error creating request: %w", err), ""
 	}
@@ -62,7 +62,7 @@ func PostAnswer(task string, answer interface{}, address string) (error, string)
 	}
 
 	// Unmarshal the response
-	var apiResp APIResponse
+	var apiResp apiResponse
 	err = json.Unmarshal(body, &apiResp)
 	if err != nil {
 		return fmt.Errorf("error unmarshaling response: %w", err), ""
