@@ -24,9 +24,9 @@ type OllamaResponse struct {
 	Context            []int     `json:"context"`
 	TotalDuration      int64     `json:"total_duration"`
 	LoadDuration       int64     `json:"load_duration"`
-	PromptEvalCount    int       `json:"prompt_eval_count"`
+	PromptEvalCount    int       `json:"prompt_eval_count"` // prompt tokens
 	PromptEvalDuration int64     `json:"prompt_eval_duration"`
-	EvalCount          int       `json:"eval_count"`
+	EvalCount          int       `json:"eval_count"` // response tokens
 	EvalDuration       int64     `json:"eval_duration"`
 }
 
@@ -39,6 +39,7 @@ func ollamaGenerateCompletion(prompt string) string {
 		Stream: false,
 		Prompt: prompt,
 	}
+	fmt.Println("num characters:", len(payload.Prompt))
 
 	// Marshal the payload into JSON
 	jsonData, err := json.Marshal(payload)
@@ -58,7 +59,6 @@ func ollamaGenerateCompletion(prompt string) string {
 		return ""
 	}
 	defer resp.Body.Close()
-	fmt.Println("Received response from ollama:")
 
 	// Read the response body
 	body, err := ioutil.ReadAll(resp.Body)
@@ -75,6 +75,8 @@ func ollamaGenerateCompletion(prompt string) string {
 		return ""
 	}
 
-	// Assuming you want to return the Response field from the OllamaResponse struct
+	fmt.Println("Received response from ollama:")
+	fmt.Println("- input tokens:", ollamaResponse.PromptEvalCount)
+	fmt.Println("- output tokens:", ollamaResponse.EvalCount)
 	return ollamaResponse.Response
 }
