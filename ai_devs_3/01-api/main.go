@@ -10,7 +10,7 @@ import (
 )
 
 const dataURL = "https://poligon.aidevs.pl/dane.txt"
-const verifyURL = "https://poligon.aidevs.pl/verify"
+const verificationURL = "https://poligon.aidevs.pl/verify"
 const taskName = "POLIGON"
 
 func main() {
@@ -35,10 +35,10 @@ func main() {
 	dataString := strings.TrimSpace(string(data))
 
 	// Split dataString by newline into a slice of strings
-	lines := strings.Split(dataString, "\n")
+	answer := strings.Split(dataString, "\n")
 
 	// Post the answer for verification
-	err, msg := api.VerifyTaskAnswer(taskName, lines, verifyURL)
+	err, msg := api.VerifyTaskAnswer(taskName, answer, verificationURL)
 	if err != nil {
 		logger.Error("Error posting answer", "error", err)
 		return
