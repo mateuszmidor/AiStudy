@@ -31,8 +31,6 @@ type OllamaResponse struct {
 }
 
 func OllamaGenerateCompletion(prompt string) string {
-	slog.Info("Prompt: \n" + prompt)
-
 	// Initialize the payload
 	payload := &OllamaRequest{
 		Model:  "llama3",
@@ -51,7 +49,7 @@ func OllamaGenerateCompletion(prompt string) string {
 	url := "http://localhost:11434/api/generate"
 
 	// Create a new request using http.Post
-	slog.Info("Sending prompt to ollama...")
+	slog.Debug("sending prompt to ollama...")
 	resp, err := http.Post(url, "application/json", bytes.NewBuffer(jsonData))
 	if err != nil {
 		slog.Error("Error sending POST request", "error", err)

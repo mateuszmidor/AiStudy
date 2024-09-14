@@ -22,43 +22,57 @@ var questions = []string{
 	"Which programming language is robust?",
 	"What is Python?",
 	"Who is lame?",
-	"Do you know any comedy shows?",
+	"What comedy shows do you know?",
+	"What programming languages do you know?",
+	"What animals do you know?",
 }
 
 func main() {
 	// fill vector db with knowledge
-	vecdb.CreateDB(knowledge)
+	slog.Info("feeding the retriever, can take a dozen seconds...")
+	vecdb.FeedDB(knowledge)
 
 	// ask questions
-	for _, q := range questions {
+	for _, question := range questions {
 		// retrieve information relevant to the question from vector db
-		rsp := vecdb.AskDB(q, 3)
-		slog.Info("search", "results", rsp)
+		slog.Info("retrieving information regarding: " + question)
+		rsp := vecdb.AskDB(question, 3)
+		slog.Info("retrieved", "results", rsp)
 
 		// create prompt that includes the retrieved information for ollama
-		prompt := makePrompt(q, rsp)
+		prompt := makePrompt(question, rsp)
+		slog.Info("prompt: \n" + prompt) // multiline
 
 		// generate response
+		slog.Info("sending prompt to ollama...")
 		response := llm.OllamaGenerateCompletion(prompt)
-		slog.Info("Response:\n" + response)
+		slog.Info("response: " + response)
 		fmt.Println()
 		fmt.Println()
 	}
 }
 
-func makePrompt(question string, informationItems []vecdb.SearchResult) string {
-	prompt := "Based only on the provided information, briefly answer the question.\nQuestion: " + question + "\n"
+// makePrompt creates a prompt for the ollama based on the question and the information pieces
+func makePrompt(question string, informationPieces []vecdb.SearchResult) string {
+	instruction := "Instruction: Based only on the provided information, answer the question in one short sentence."
+	information := collectInformationPieces(informationPieces)
+	question = "Question: " + question
+	return instruction + "\n" + information + "\n" + question
+}
 
+// collectInformationPieces collects information pieces from the search results,
+// checks if they are useful and returns them as a single string
+func collectInformationPieces(informationItems []vecdb.SearchResult) string {
 	var info []string
 	for _, r := range informationItems {
 		if isUsefulInformation(r) {
 			info = append(info, "Information: "+r.Text)
 		}
 	}
-
-	return prompt + strings.Join(info, "\n")
+	return strings.Join(info, "\n")
 }
 
+// isUsefulInformation checks if the information piece is usefulbased on the score and returns true if it is
 func isUsefulInformation(r vecdb.SearchResult) bool {
 	return r.Score > 0.25 // arbitrary threshold but should work fine for now
 }

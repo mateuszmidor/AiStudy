@@ -69,8 +69,8 @@ type SearchResult struct {
 const dbBaseURL = "http://localhost:6333/collections/"
 const collectionName = "knowledge"
 
-func CreateDB(knowledge []string) {
-	slog.Info("determining embeding dimensions")
+func FeedDB(knowledge []string) {
+	slog.Debug("determining embeding dimensions")
 	dimensions := len(embed("Check embeding dimensions"))
 
 	// create the collection in vector database
@@ -97,7 +97,7 @@ func AskDB(question string, maxAnswers int) (result []SearchResult) {
 
 // addCollection creates new collection of entries in vector database
 func addCollection(dimensions int) error {
-	slog.Info("add collection", slog.String("name", collectionName), slog.Int("dimensions", dimensions))
+	slog.Debug("add collection", slog.String("name", collectionName), slog.Int("dimensions", dimensions))
 
 	// Prepare database config
 	config := CollectionConfig{
@@ -117,7 +117,7 @@ func addCollection(dimensions int) error {
 
 // addPoint adds new entry to collection
 func addPoint(vector []float64, text string) error {
-	slog.Info("add point", slog.String("text", text))
+	slog.Debug("add point", slog.String("text", text))
 
 	// Prepare payload
 	payload := map[string]interface{}{
@@ -142,7 +142,7 @@ func addPoint(vector []float64, text string) error {
 
 // search looks up database entries similar to provided vector
 func search(vector []float64, text string, maxAnswers int) (*SearchResponse, error) {
-	slog.Info("search", slog.String("text", text))
+	slog.Debug("search", slog.String("text", text))
 
 	// Prepare search query
 	query := SearchQuery{Vector: vector, Limit: maxAnswers, WithPayload: true}
