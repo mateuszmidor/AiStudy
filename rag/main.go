@@ -9,6 +9,7 @@ import (
 	"github.com/mateuszmidor/AiStudy/rag/vecdb"
 )
 
+// knowledge is a list of strings that are used to train the vector db
 var knowledge = []string{
 	"Python is kind of snake",
 	"C++ is programming language that produces fast programs",
@@ -17,6 +18,7 @@ var knowledge = []string{
 	"Monty Python is a comedy show",
 }
 
+// questions is a list of questions that are used to test the RAG
 var questions = []string{
 	"Which programming language is fast?",
 	"Which programming language is robust?",

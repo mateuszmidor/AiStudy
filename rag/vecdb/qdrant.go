@@ -62,13 +62,14 @@ type SearchResponse struct {
 }
 
 type SearchResult struct {
-	Score float64
-	Text  string
+	Score float64 // range 0-1
+	Text  string  // payload of the found vector db entry
 }
 
 const dbBaseURL = "http://localhost:6333/collections/"
 const collectionName = "knowledge"
 
+// FeedDB creates a new collection in the vector database and stores the provided knowledge in form of embeddings
 func FeedDB(knowledge []string) {
 	slog.Debug("determining embeding dimensions")
 	dimensions := len(embed("Check embeding dimensions"))
@@ -83,6 +84,7 @@ func FeedDB(knowledge []string) {
 	}
 }
 
+// AskDB retrieves information from the vector database based on the provided question, it returns a maximum of maxAnswers
 func AskDB(question string, maxAnswers int) (result []SearchResult) {
 	embedding := embed(question)
 	response, err := search(embedding, question, maxAnswers)
