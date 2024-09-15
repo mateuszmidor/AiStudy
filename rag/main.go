@@ -43,7 +43,7 @@ func main() {
 
 		// create prompt that includes the retrieved information for ollama
 		prompt := makePrompt(question, rsp)
-		slog.Info("prompt: \n" + prompt) // multiline
+		slog.Info("prepared prompt: \n" + prompt) // multiline
 
 		// generate response
 		slog.Info("sending prompt to ollama...")
