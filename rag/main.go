@@ -1,8 +1,10 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"log/slog"
+	"os"
 	"strings"
 
 	"github.com/mateuszmidor/AiStudy/rag/llm"
@@ -33,8 +35,12 @@ func main() {
 	// fill vector db with knowledge
 	slog.Info("feeding the retriever, can take a dozen seconds...")
 	vecdb.FeedDB(knowledge)
+	demoMode()
+	// interactiveMode()
+}
 
-	// ask questions
+// demoMode asks the RAG a series of predefined questions
+func demoMode() {
 	for _, question := range questions {
 		// retrieve information relevant to the question from vector db
 		slog.Info("retrieving information regarding: " + question)
@@ -50,6 +56,29 @@ func main() {
 		response := llm.OllamaGenerateCompletion(prompt)
 		slog.Info("response: " + response)
 		fmt.Println()
+	}
+}
+
+// interactiveMode allows user to ask the RAG custom questions
+func interactiveMode() {
+	reader := bufio.NewReader(os.Stdin)
+
+	fmt.Println("ask me a question :)")
+	for {
+		fmt.Print("> ")
+		question, _ := reader.ReadString('\n')
+		fmt.Print("(thinking...)")
+
+		// retrieve information relevant to the question from vector db
+		rsp := vecdb.AskDB(question, 3)
+
+		// create prompt that includes the retrieved information for ollama
+		prompt := makePrompt(question, rsp)
+
+		// generate response
+		response := llm.OllamaGenerateCompletion(prompt)
+		fmt.Println()
+		fmt.Println(response)
 		fmt.Println()
 	}
 }
