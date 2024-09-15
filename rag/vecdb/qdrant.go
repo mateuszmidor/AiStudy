@@ -79,7 +79,7 @@ func FeedDB(knowledge []string) {
 	// create the collection in vector database
 	panicOnError(addCollection(dimensions))
 
-	// store embeddings in collection, in parallel - reduces time by 3x
+	// store embeddings in collection, do it in parallel - reduces time by 3x
 	start := time.Now()
 	wg := sync.WaitGroup{}
 	for _, k := range knowledge {
