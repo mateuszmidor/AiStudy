@@ -4,7 +4,10 @@
 ## Run
 
 ```sh
-ollama run llama3
+# terminal 1  
+make ollama # may take a while, downloads model
+
+# terminal 2
 make install # may take a while, installs lots of Python's packages
 make run
 ```
