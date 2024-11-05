@@ -55,6 +55,7 @@ const loginFormExample = `
 </html>
 `
 
+// fetchHTML retrieves the HTML content from the specified URL and returns it as a string.
 func fetchHTML(url string) string {
 	resp, err := http.Get(url)
 	if err != nil {
@@ -72,6 +73,7 @@ func fetchHTML(url string) string {
 	return string(body)
 }
 
+// extractQuestionFromHTMLForm extracts the question text from a specific HTML element with id "human-question".
 func extractQuestionFromHTMLForm(html string) string {
 	startTag := `<p id="human-question">Question:<br />`
 	endTag := `</p>`
@@ -90,6 +92,7 @@ func extractQuestionFromHTMLForm(html string) string {
 	return html[startIndex : startIndex+endIndex]
 }
 
+// submitLoginCredentials sends login credentials and captcha answer to the specified login page URL and returns the response body as a string.
 func submitLoginCredentials(login, password, captchaAnswer, loginPageURL string) string {
 	data := url.Values{}
 	data.Set("username", login)
@@ -112,6 +115,7 @@ func submitLoginCredentials(login, password, captchaAnswer, loginPageURL string)
 	return string(body)
 }
 
+// main function orchestrates the process of fetching an HTML form, extracting a question, generating a prompt for completion, and submitting login credentials.
 func main() {
 	htmlForm := fetchHTML(loginFormURL)
 	question := extractQuestionFromHTMLForm(htmlForm)

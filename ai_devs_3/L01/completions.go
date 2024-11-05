@@ -14,7 +14,7 @@ const (
 )
 
 type GPTRequest struct {
-	Model          string    `json:"model"`                     // REQUIRED, [gpt-3.5-turbo, gpt-4-turbo-preview]
+	Model          string    `json:"model"`                     // REQUIRED, [gpt-3.5-turbo, gpt-4-turbo-preview, gpt-4o-mini, gpt-4o]
 	Messages       []Message `json:"messages"`                  // REQUIRED, at least 1 "user" message
 	ResponseFormat *Format   `json:"response_format,omitempty"` // [text, json_object]
 	NumAnswers     uint      `json:"n,omitempty"`               // [1..+oo], default: 1; cheapest option
@@ -66,21 +66,21 @@ func (e *GPTError) Error() string {
 }
 
 func completion(prompt string) (string, error) {
-	apiKey := os.Getenv("GPT_APIKEY") // Get the API key from the environment variable
+	apiKey := os.Getenv("OPENAI_API_KEY") // Get the API key from the environment variable
 	if apiKey == "" {
 		return "", fmt.Errorf("OpenAI API key is not set")
 	}
 
 	reqBody := GPTRequest{
-		Model: "gpt-4o-mini",
-		// Format:     Format{Type: "json_object"},
-		NumAnswers:  1,
-		MaxTokens:   256,
-		Temperature: 0.0,
+		Model:          "gpt-4o-mini",
+		ResponseFormat: &Format{Type: "text"},
+		NumAnswers:     1,
+		MaxTokens:      256,
+		Temperature:    0.0,
 		Messages: []Message{
-			// {
-			// 	Role: "system", Content: "answer in form of a table ",
-			// },
+			{
+				Role: "system", Content: "do your best to help the user by answering concisely and precisely to user's question",
+			},
 			{
 				Role: "user", Content: prompt,
 			},
