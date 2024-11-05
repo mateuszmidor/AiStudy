@@ -6,7 +6,7 @@ import (
 )
 
 func main() {
-	videoURL := "https://www.youtube.com/watch?v=XOKtkMVW_lY" // must be a video with captions
+	videoURL := "https://www.youtube.com/watch?v=Fjna3U56a7E" // must be a video with captions
 	captions, err := getCaptions(videoURL)
 	if err != nil {
 		fmt.Println("Error:", err)

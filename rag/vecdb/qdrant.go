@@ -24,7 +24,7 @@ type CollectionConfig struct {
 // VectorConfig represents the configuration for vectors.
 type VectorConfig struct {
 	Size     int    `json:"size"`     // how many dimensions
-	Distance string `json:"distance"` // distance func ["Dot", "Cosine"]
+	Distance string `json:"distance"` // distance func ["Cosine", "Dot", "Euclidean", "Manhattan"]
 }
 
 // Point is a single entry in collection
