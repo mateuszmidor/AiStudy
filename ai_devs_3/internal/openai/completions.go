@@ -1,4 +1,4 @@
-package main
+package openai
 
 import (
 	"bytes"
@@ -65,7 +65,7 @@ func (e *GPTError) Error() string {
 	return e.Message
 }
 
-func completion(prompt string) (string, error) {
+func Completion(prompt string) (string, error) {
 	apiKey := os.Getenv("OPENAI_API_KEY") // Get the API key from the environment variable
 	if apiKey == "" {
 		return "", fmt.Errorf("OpenAI API key is not set")

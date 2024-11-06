@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+
+	"github.com/mateuszmidor/AiStudy/ai_devs_3/internal/openai"
 )
 
 const loginFormURL = "http://xyz.ag3nts.org"
@@ -120,7 +122,7 @@ func main() {
 	htmlForm := fetchHTML(loginFormURL)
 	question := extractQuestionFromHTMLForm(htmlForm)
 	prompt := "Odpowiedz maksymalnie zwięźle na ponizsze pytanie, w odpowiedzi podaj wyłącznie liczbę bez zadnego dodatkowego tekstu:\n" + question
-	answer, err := completion(prompt)
+	answer, err := openai.Completion(prompt)
 	if err != nil {
 		fmt.Println("Error:", err)
 		return
