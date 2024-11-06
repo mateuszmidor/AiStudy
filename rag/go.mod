@@ -1,3 +1,3 @@
 module github.com/mateuszmidor/AiStudy/rag
 
-go 1.22.6
+go 1.21
