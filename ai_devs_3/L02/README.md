@@ -1,3 +1,3 @@
-# L01
+# L02
 
-Respond to captcha fast and autoamatically using LLM.
+Respond to verification question using LLM.
