@@ -65,14 +65,22 @@ func (e *GPTError) Error() string {
 	return e.Message
 }
 
-func Completion(prompt string) (string, error) {
+func CompletionCheap(prompt string) (string, error) {
+	return Completion(prompt, "gpt-4o-mini")
+}
+
+func CompletionStrong(prompt string) (string, error) {
+	return Completion(prompt, "gpt-4o")
+}
+
+func Completion(prompt, model string) (string, error) {
 	apiKey := os.Getenv("OPENAI_API_KEY") // Get the API key from the environment variable
 	if apiKey == "" {
 		return "", fmt.Errorf("OpenAI API key is not set")
 	}
 
 	reqBody := GPTRequest{
-		Model:          "gpt-4o-mini",
+		Model:          model,
 		ResponseFormat: &Format{Type: "text"},
 		NumAnswers:     1,
 		MaxTokens:      256,

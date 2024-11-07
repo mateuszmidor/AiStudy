@@ -23,7 +23,7 @@ type apiResponse struct {
 }
 
 // VerifyTaskAnswer sends task answer to the API and returns error and response message
-func VerifyTaskAnswer(task string, answer interface{}, verificationURL string) (error, string) {
+func VerifyTaskAnswer(task string, answer interface{}, verificationURL string) (string, error) {
 	client := &http.Client{}
 
 	// Create the request body
@@ -36,13 +36,13 @@ func VerifyTaskAnswer(task string, answer interface{}, verificationURL string) (
 	// Marshal the request body to JSON
 	jsonBody, err := json.Marshal(reqBody)
 	if err != nil {
-		return fmt.Errorf("error marshaling request body: %w", err), ""
+		return "", fmt.Errorf("error marshaling request body: %w", err)
 	}
 
 	// Create the HTTP request
 	req, err := http.NewRequest("POST", verificationURL, bytes.NewBuffer(jsonBody))
 	if err != nil {
-		return fmt.Errorf("error creating request: %w", err), ""
+		return "", fmt.Errorf("error creating request: %w", err)
 	}
 
 	// Set headers
@@ -51,27 +51,28 @@ func VerifyTaskAnswer(task string, answer interface{}, verificationURL string) (
 	// Send the request
 	resp, err := client.Do(req)
 	if err != nil {
-		return fmt.Errorf("error sending request: %w", err), ""
+		return "", fmt.Errorf("error sending request: %w", err)
 	}
 	defer resp.Body.Close()
 
 	// Read the response body
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return fmt.Errorf("error reading response body: %w", err), ""
+		return "", fmt.Errorf("error reading response body: %w", err)
 	}
 
 	// Unmarshal the response
 	var apiResp apiResponse
 	err = json.Unmarshal(body, &apiResp)
 	if err != nil {
-		return fmt.Errorf("error unmarshaling response: %w", err), ""
+		return "", fmt.Errorf("error unmarshaling response: %w", err)
 	}
 
 	// Check for API error
 	if apiResp.Code < 0 {
-		return fmt.Errorf("API error: %s (code: %d)", apiResp.Message, apiResp.Code), ""
+
+		return "", fmt.Errorf("API error: %s (code: %d)", apiResp.Message, apiResp.Code)
 	}
 
-	return nil, apiResp.Message
+	return apiResp.Message, nil
 }
