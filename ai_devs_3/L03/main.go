@@ -54,6 +54,7 @@ func main() {
 		return
 	}
 
+	// Verify all items
 	for i, item := range data.TestData {
 		// Correct calculation errors
 		parts := strings.Split(item.Question, " + ")

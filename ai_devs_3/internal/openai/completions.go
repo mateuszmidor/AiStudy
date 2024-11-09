@@ -74,57 +74,10 @@ func CompletionStrong(prompt string) (string, error) {
 }
 
 func Completion(prompt, model string) (string, error) {
-	apiKey := os.Getenv("OPENAI_API_KEY") // Get the API key from the environment variable
-	if apiKey == "" {
-		return "", fmt.Errorf("OpenAI API key is not set")
-	}
-
-	reqBody := GPTRequest{
-		Model:          model,
-		ResponseFormat: &Format{Type: "text"},
-		NumAnswers:     1,
-		MaxTokens:      256,
-		Temperature:    0.0,
-		Messages: []Message{
-			{
-				Role: "system", Content: "do your best to help the user by answering concisely and precisely to user's question",
-			},
-			{
-				Role: "user", Content: prompt,
-			},
-		},
-	}
-
-	reqBytes, err := json.Marshal(reqBody)
+	gptResp, err := CompletionExpert("do your best to help the user by answering concisely and precisely to user's question", prompt, model, "text", 1000, 0.0)
 	if err != nil {
 		return "", err
 	}
-
-	req, err := http.NewRequest("POST", openAIURL, bytes.NewReader(reqBytes))
-	if err != nil {
-		return "", err
-	}
-
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+apiKey)
-
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		return "", err
-	}
-	defer resp.Body.Close()
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return "", err
-	}
-
-	var gptResp GPTResponse
-	if err := json.Unmarshal(body, &gptResp); err != nil {
-		return "", err
-	}
-
 	if len(gptResp.Choices) > 0 {
 		if len(gptResp.Choices) > 1 {
 			fmt.Println(gptResp.Choices[1:])
@@ -133,4 +86,59 @@ func Completion(prompt, model string) (string, error) {
 	}
 
 	return "", gptResp.Error
+}
+
+func CompletionExpert(system, user, model, responseFormat string, maxTokens int, temperature float32) (*GPTResponse, error) {
+	apiKey := os.Getenv("OPENAI_API_KEY") // Get the API key from the environment variable
+	if apiKey == "" {
+		return nil, fmt.Errorf("OpenAI API key is not set")
+	}
+
+	reqBody := GPTRequest{
+		Model:          model,
+		ResponseFormat: &Format{Type: responseFormat},
+		NumAnswers:     1,
+		MaxTokens:      maxTokens,
+		Temperature:    temperature,
+		Messages: []Message{
+			{
+				Role: "system", Content: system,
+			},
+			{
+				Role: "user", Content: user,
+			},
+		},
+	}
+
+	reqBytes, err := json.Marshal(reqBody)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", openAIURL, bytes.NewReader(reqBytes))
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+apiKey)
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	var gptResp GPTResponse
+	if err := json.Unmarshal(body, &gptResp); err != nil {
+		return nil, err
+	}
+
+	return &gptResp, nil
 }
