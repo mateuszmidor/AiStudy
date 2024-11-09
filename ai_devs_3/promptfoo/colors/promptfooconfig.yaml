@@ -1,0 +1,48 @@
+# Learn more about building a configuration: https://promptfoo.dev/docs/configuration/guide
+description: "Color expert"
+
+prompts:
+  - "List the main colors of {{subject}}, format the result as JSON list, don't add any extra markers, decorators nor comments. Example list: [color1, color2, color3]"
+  # - "Write a concise, funny tweet about {{topic}}"
+  
+
+providers:
+  - "openai:gpt-4o-mini"
+  # - "openai:gpt-3.5-turbo"
+  
+
+tests:
+  - vars:
+      subject: banana
+
+  - vars:
+      subject: avocado
+
+  - vars:
+      subject: forest
+
+  - vars:
+      subject: ocean
+
+  - vars:
+      subject: rainbow
+    assert:
+      # For more information on assertions, see https://promptfoo.dev/docs/configuration/expected-outputs
+
+      # Make sure output contains the color
+      - type: icontains
+        value: red
+      - type: icontains
+        value: yellow
+      - type: icontains
+        value: violet
+
+      # Prefer shorter outputs
+      - type: javascript
+        value: 1 / (output.length + 1)
+
+      # For more information on model-graded evals, see https://promptfoo.dev/docs/configuration/expected-outputs/model-graded
+      - type: llm-rubric
+        value: ensure that the output is in format of JSON list
+
+

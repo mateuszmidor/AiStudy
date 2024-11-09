@@ -7,6 +7,8 @@ import (
 	"io"
 	"net/http"
 	"os"
+
+	"github.com/pkg/errors"
 )
 
 // apiRequest represents the structure for API requests
@@ -75,4 +77,18 @@ func VerifyTaskAnswer(task string, answer interface{}, verificationURL string) (
 	}
 
 	return apiResp.Message, nil
+}
+
+func FetchTask(url string) (string, error) {
+	resp, err := http.Get(url)
+	if err != nil {
+		return "", errors.Wrapf(err, "error fetching resource from %q", url)
+	}
+	defer resp.Body.Close()
+
+	data, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", errors.Wrapf(err, "error reading http response body fetched from %q", url)
+	}
+	return string(data), nil
 }

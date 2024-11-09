@@ -8,7 +8,7 @@ prompts:
 
 providers:
   - "openai:gpt-4o-mini"
-  - "openai:gpt-4o"
+  # - "openai:gpt-4o"
   
 
 tests:
