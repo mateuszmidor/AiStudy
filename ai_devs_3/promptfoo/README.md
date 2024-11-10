@@ -18,7 +18,7 @@ Set your OPENAI_API_KEY environment variable.
 
 ```sh
 promptfoo init # create yaml file
-promptfoo eval # run evaluation and display in console
+promptfoo eval --grader openai:gpt-4o-mini # run evaluation and display in console. Use gpt-4o--mini for llm-rubric assertions (default: gpt-4o)
 promptfoo view # display evaluation results in browser
 ```
 

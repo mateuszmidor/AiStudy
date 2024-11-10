@@ -2,14 +2,30 @@
 description: "Color expert"
 
 prompts:
-  - "List the main colors of {{subject}}, format the result as JSON list, don't add any extra markers, decorators nor comments. Example list: [color1, color2, color3]"
-  # - "Write a concise, funny tweet about {{topic}}"
-  
+  - |
+    List the main colors of subject:{{subject}}. 
+    Format the result as JSON list. 
+    Don't add any extra markers, decorators nor comments. 
+    Example of expected list: [color1, color2, color3]
+  # - file://prompt.txt # can also read the prompt from a file
 
 providers:
-  - "openai:gpt-4o-mini"
   # - "openai:gpt-3.5-turbo"
+  # - "openai:gpt-4o-mini"
+  - "ollama:chat:llama3:8b" # first you need to run in terminal: ollama run llam3:8b
   
+defaultTest:
+  assert:
+    # make sure that LLM returned anything
+    - type: python
+      value: | 
+        if len(output) == 0:
+          return {'pass': False, 'score': 0.0, 'reason': 'LMM returned empty response'}
+        else:
+          return True
+
+    # make sure that LLM returned a valid JSON as requested in prompt
+    - type: is-json
 
 tests:
   - vars:
@@ -22,14 +38,14 @@ tests:
       subject: forest
 
   - vars:
-      subject: ocean
-
+      subject: desert
+  
   - vars:
       subject: rainbow
     assert:
       # For more information on assertions, see https://promptfoo.dev/docs/configuration/expected-outputs
 
-      # Make sure output contains the color
+      # Make sure output contains specific colors
       - type: icontains
         value: red
       - type: icontains
@@ -38,11 +54,11 @@ tests:
         value: violet
 
       # Prefer shorter outputs
-      - type: javascript
-        value: 1 / (output.length + 1)
+      - type: python
+        value: 1.0 / (len(output) + 1)
 
+      # make sure the output only contains basic colors
       # For more information on model-graded evals, see https://promptfoo.dev/docs/configuration/expected-outputs/model-graded
       - type: llm-rubric
-        value: ensure that the output is in format of JSON list
-
-
+        value: ensure that the output is a list of basic colors and basic colors only, no other words are allowed on the list.
+        provider: openai:gpt-4o-mini # default is gpt-4o
