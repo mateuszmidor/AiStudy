@@ -11,8 +11,8 @@ prompts:
 
 providers:
   # - "openai:gpt-3.5-turbo"
-  # - "openai:gpt-4o-mini"
-  - "ollama:chat:llama3:8b" # first you need to run in terminal: ollama run llam3:8b
+  - "openai:gpt-4o-mini"
+  # - "ollama:chat:llama3:8b" # first you need to run in terminal: ollama run llam3:8b
   
 defaultTest:
   assert:
