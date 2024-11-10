@@ -1,10 +1,14 @@
-# promptfoo 
+# promptfoo
 
-For prompt evaluation and testing. 
+For prompt evaluation and testing.
 
 ## Installation
 
 ```sh
+sudo pacman -S nvm
+echo 'source /usr/share/nvm/init-nvm.sh' >> ~/.bashrc
+echo 'source /usr/share/nvm/init-nvm.sh' >> ~/.zshrc
+nvm install --lts
 npm install -g promptfoo
 # OR
 brew install promptfoo

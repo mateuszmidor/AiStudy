@@ -3,22 +3,22 @@ description: "Color expert"
 
 prompts:
   - |
-    List the main colors of subject:{{subject}}. 
-    Format the result as JSON list. 
-    Don't add any extra markers, decorators nor comments. 
+    List the main colors of subject:{{subject}}.
+    Format the result as JSON list.
+    Don't add any extra markers, decorators nor comments.
     Example of expected list: [color1, color2, color3]
   # - file://prompt.txt # can also read the prompt from a file
 
 providers:
   # - "openai:gpt-3.5-turbo"
   - "openai:gpt-4o-mini"
-  # - "ollama:chat:llama3:8b" # first you need to run in terminal: ollama run llam3:8b
-  
+  # - "ollama:chat:llama3:8b" # first you need to run in terminal: ollama run llama3:8b
+
 defaultTest:
   assert:
     # make sure that LLM returned anything
     - type: python
-      value: | 
+      value: |
         if len(output) == 0:
           return {'pass': False, 'score': 0.0, 'reason': 'LMM returned empty response'}
         else:
@@ -39,7 +39,7 @@ tests:
 
   - vars:
       subject: desert
-  
+
   - vars:
       subject: rainbow
     assert:
