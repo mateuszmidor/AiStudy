@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/pkg/errors"
 )
@@ -79,7 +80,7 @@ func VerifyTaskAnswer(task string, answer interface{}, verificationURL string) (
 	return apiResp.Message, nil
 }
 
-func FetchTask(url string) (string, error) {
+func FetchData(url string) (string, error) {
 	resp, err := http.Get(url)
 	if err != nil {
 		return "", errors.Wrapf(err, "error fetching resource from %q", url)
@@ -91,4 +92,15 @@ func FetchTask(url string) (string, error) {
 		return "", errors.Wrapf(err, "error reading http response body fetched from %q", url)
 	}
 	return string(data), nil
+}
+
+func BuildPrompt(filename, placeholder, data string) (string, error) {
+	fileContent, err := os.ReadFile(filename)
+	if err != nil {
+		return "", errors.Wrapf(err, "error reading file %q", filename)
+	}
+
+	// Replace the placeholder with the provided data
+	updatedContent := strings.ReplaceAll(string(fileContent), placeholder, data)
+	return updatedContent, nil
 }

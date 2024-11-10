@@ -20,13 +20,14 @@ defaultTest:
     - type: python
       value: |
         if len(output) == 0:
-          return {'pass': False, 'score': 0.0, 'reason': 'LMM returned empty response'}
+          return {'pass': False, 'score': 0.0, 'reason': 'LLM returned empty response'}
         else:
           return True
 
     # make sure that LLM returned a valid JSON as requested in prompt
     - type: is-json
 
+# Set up individual test cases
 tests:
   - vars:
       subject: banana
@@ -42,9 +43,8 @@ tests:
 
   - vars:
       subject: rainbow
+    # For more information on assertions, see https://promptfoo.dev/docs/configuration/expected-outputs
     assert:
-      # For more information on assertions, see https://promptfoo.dev/docs/configuration/expected-outputs
-
       # Make sure output contains specific colors
       - type: icontains
         value: red
@@ -57,8 +57,8 @@ tests:
       - type: python
         value: 1.0 / (len(output) + 1)
 
-      # make sure the output only contains basic colors
+      # Make sure the output only contains basic colors
       # For more information on model-graded evals, see https://promptfoo.dev/docs/configuration/expected-outputs/model-graded
       - type: llm-rubric
-        value: ensure that the output is a list of basic colors and basic colors only, no other words are allowed on the list.
+        value: Check that the output is a list of rudimentary colors and basic colors only, no other words are allowed on the list.
         provider: openai:gpt-4o-mini # default is gpt-4o

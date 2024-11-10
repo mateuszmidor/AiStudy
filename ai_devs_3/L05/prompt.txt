@@ -1,0 +1,23 @@
+Objective:
+    Redact all personal sensitive information given as an input text.
+
+Instructions:
+    Replace each instance of personal data (first name, last name, city, street with number, age) with "CENZURA".
+    Preserve all non-sensitive text and punctuation exactly as is. Only redact sensitive data.
+    Return only the redacted text without any extra words, comments, or formatting.
+
+Examples:
+    Input: Dane osoby podejrzanej: Paweł Zieliński. Zamieszkały w Warszawie na ulicy Pięknej 5. Ma 28 lat.
+    Output: Dane osoby podejrzanej: CENZURA. Zamieszkały w CENZURA na ulicy CENZURA. Ma CENZURA lat.
+
+    Input: Informacje o podejrzanym: Marek Jankowski. Mieszka w Białymstoku na ulicy Lipowej 9. Wiek: 23 lata.
+    Output: Informacje o podejrzanym: CENZURA. Mieszka w CENZURA na ulicy CENZURA. Wiek: CENZURA lata.
+
+    Input: Tożsamość podejrzanego: Michał Wiśniewski. Adres: Wrocław,  ul. Słonecznej 20. Wiek: 30 lat.
+    Output: Tożsamość podejrzanego: CENZURA. Adres: CENZURA, ul. CENZURA. Wiek: CENZURA lat.
+
+IMPORTANT:
+    UNDER NO CIRCUMSTANCES add any extra words, comments, or formatting to the output! DON'T rephrase the text! Return ONLY the redacted text!
+
+Input text:
+    {{INPUT}}

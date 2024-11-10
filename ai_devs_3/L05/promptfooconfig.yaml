@@ -1,0 +1,75 @@
+# Learn more about building a configuration: https://promptfoo.dev/docs/configuration/guide
+description: "Color expert"
+
+prompts:
+  - file://prompt.txt # can also read the prompt from a file
+
+providers:
+  - "openai:gpt-3.5-turbo"
+  - "ollama:chat:llama3:8b" # first you need to run in terminal: ollama run llama3:8b
+  
+# These test properties are applied to every test
+defaultTest:
+  assert:
+    # make sure that LLM returned anything
+    - type: python
+      value: | 
+        if len(output) == 0:
+          return {'pass': False, 'score': 0.0, 'reason': 'LLM returned empty response'}
+        else:
+          return True
+
+# Set up individual test cases
+tests:
+  - vars:
+      INPUT: "Informacje o podejrzanym: Adam Nowak. Mieszka w Katowicach przy ulicy Tuwima 10. Wiek: 32 lata."
+    # For more information on assertions, see https://promptfoo.dev/docs/configuration/expected-outputs
+    assert:
+      - type: not-icontains
+        value: Adam
+      - type: not-icontains
+        value: Nowak
+      - type: not-icontains
+        value: Katowicach
+      - type: not-icontains
+        value: Tuwima
+      - type: not-icontains
+        value: 10
+      - type: not-icontains
+        value: 32
+      - type: starts-with
+        value: "Informacje o podejrzanym: "
+  - vars:
+      INPUT: "Osoba podejrzana to Andrzej Mazur. Adres: Gdańsk, ul. Długa 8. Wiek: 29 lat."
+    assert:
+      - type: not-icontains
+        value: Andrzej
+      - type: not-icontains
+        value: Mazur
+      - type: not-icontains
+        value: Gdańsk
+      - type: not-icontains
+        value: Długa
+      - type: not-icontains
+        value: 8
+      - type: not-icontains
+        value: 29
+      - type: starts-with
+        value: "Osoba podejrzana to "
+  - vars:
+      INPUT: "Podejrzany: Krzysztof Kwiatkowski. Zamieszkały w Szczecinie przy ul. Różanej 12. Ma 31 lat."
+    assert:
+      - type: not-icontains
+        value: Krzysztof
+      - type: not-icontains
+        value: Kwiatkowski
+      - type: not-icontains
+        value: Szczecinie
+      - type: not-icontains
+        value: DłRóżanejuga
+      - type: not-icontains
+        value: 12
+      - type: not-icontains
+        value: 31
+      - type: starts-with
+        value: "Podejrzany: "
