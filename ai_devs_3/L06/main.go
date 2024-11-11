@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/mateuszmidor/AiStudy/ai_devs_3/api"
 	"github.com/mateuszmidor/AiStudy/ai_devs_3/internal/openai"
@@ -108,7 +109,7 @@ func unzipArchive(source, destination string) error {
 	return nil
 }
 
-// readOrTranscribe returns key-value pairs: {filename: transcription}
+// readOrTranscribe returns key-value pairs: {filename: transcription} for all .m4a files found under sourceDir
 func readOrTranscribe(sourceDir string) (map[string]string, error) {
 	files, err := os.ReadDir(sourceDir)
 	if err != nil {
@@ -119,7 +120,7 @@ func readOrTranscribe(sourceDir string) (map[string]string, error) {
 
 	for _, file := range files {
 		// skip non-audio files
-		if filepath.Ext(file.Name()) != ".m4a" {
+		if strings.ToLower(filepath.Ext(file.Name())) != ".m4a" {
 			continue
 		}
 
