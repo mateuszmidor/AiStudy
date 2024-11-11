@@ -1,0 +1,38 @@
+# Learn more about building a configuration: https://promptfoo.dev/docs/configuration/guide
+description: "Maze solver"
+
+prompts:
+  - file://prompt.txt # can also read the prompt from a file
+
+providers:
+  - "openai:gpt-4o-mini"
+  # - "ollama:chat:llama3:8b" # first you need to run in terminal: ollama run llama3:8b
+  
+# These test properties are applied to every test
+defaultTest:
+  assert:
+    # make sure that LLM returned anything
+    - type: python
+      value: | 
+        if len(output) == 0:
+          return {'pass': False, 'score': 0.0, 'reason': 'LLM returned empty response'}
+        else:
+          return True
+
+# Set up individual test cases
+tests:
+  - vars:
+      INPUT: |
+        #B
+        A.
+    assert:
+      - type: icontains
+        value: RIGHT, UP
+ 
+  - vars:
+      INPUT: |
+        .B
+        A#
+    assert:
+      - type: icontains
+        value: UP, RIGHT

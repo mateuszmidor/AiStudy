@@ -1,0 +1,48 @@
+Objective
+	Solve a maze by moving in 2-dimensional Cartesian coordinate system, where X-axis means moving LEFT or RIGHT, and Y-axis means moving UP or DOWN.
+	Find a path in 2-dimensional maze that connects points A and B, without hitting any wall.
+	The maze will be presented to you in form of 2-dimensional ASCII graphic.
+
+ASCII characters used to define the maze
+	. = empty space
+	# = wall
+	A = starting point
+	B = finish point
+
+Rules
+	The path is composed from a series of MOVEs.
+	Each move distance is 1 ASCII character.
+
+Allowed moves
+	UP = decrement Y coordinate by 1
+	DOWN = increment Y coordinate by 1
+	LEFT = decrement X coordinate by 1
+	RIGHT = increment X coordinate by 1
+
+Example maze 1, size 2x2, no walls, valid steps: UP
+B.
+A.
+
+Example maze 2, size 2x2, no walls, valid steps: RIGHT
+..
+AB
+
+Example maze 3, size 3x3, one wall, valid steps: UP, RIGHT, DOWN
+...
+...
+A#B
+
+Steps to solve the maze
+	1. Translate the maze ASCII representation to coordinates (X,Y) where (X=0,Y=0) is the top-left corner.
+	2. Find ALL walls in maze, remember their coordinates and keep them on a list
+	3. Find A and B in maze, remember their coordinates
+	4. Find a route through the maze from A to B, it CAN NOT cross any wall
+
+The expected response is JSON in following format:
+{
+	"_thoughts": "there is an obstacle on the right so I move up first, ...",
+	"_wall_coordinates": (X=3, Y=0), (X=3, Y=1)
+	"steps": "UP, UP, RIGHT, DOWN"
+}
+Maze to solve:
+{{INPUT}}

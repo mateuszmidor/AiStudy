@@ -9,76 +9,27 @@ import (
 	"github.com/henomis/langfuse-go"
 	"github.com/henomis/langfuse-go/model"
 	"github.com/joho/godotenv"
+	"github.com/mateuszmidor/AiStudy/ai_devs_3/api"
 	"github.com/mateuszmidor/AiStudy/ai_devs_3/internal/openai"
 )
-
-const system = `
-<objective>
-You are a precise maze solver, who effectively finds a route through given maze from point A to point B, following only allowed fields.
-Given a rectangular maze built from ASCII characters, your task is to find a series of allowed moves needed to move from starting point "A" to finish point "B", only stepping on allowed fields marked as ".".
-The ASCII characters that build the maze are:
-<maze_fields>
-. = allowed field, good to step on it
-# = obstacle, can not step on it
-A = starting point
-B = Finish point
-</maze_fields>
-A move only moves by 1.
-The allowed moves for moving around in the maze are:
-<allowed_moves>
-- UP = move by (X=0, Y=1)
-- DOWN = move by (X=0, Y=-1) 
-- LEFT = move by (X=-1, Y=0)
-- RIGHT = move by (X=1, Y=0)
-</allowed_moves>
-<example_maze_1>
-B.
-A.
-</example_maze_1>
-<example_maze_1_steps>
-UP
-<example_maze_1_steps>
-<example_maze_2>
-..
-AB
-</example_maze_2>
-</example_maze_2_steps>
-RIGHT
-</example_maze_2_steps>
-<example_maze_3>
-...
-...
-A#B
-</example_maze_3_steps>
-UP, RIGHT, RIGHT, DOWN
-</example_maze_3_steps>
-
-You should solve the maze by following steps:
-1. Translate the maze ASCII representation to coordinates (X,Y) where (0,0) is the top-left corner.
-2. Find ALL allowed fields in maze and translate them to coordinates
-3. Find positions A and B and translate them to coordinates
-4. Find a route through the maze from A to B, it should only go through the allowed fields marked as "."
-
-The expected response is JSON in following format:
-{
-	"_thoughts": "there is an obstacle on the right so I move up first, ...",
-	"steps": "UP, UP, RIGHT, DOWN"
-}
-`
 
 // langfuse-go read following env variables:
 // LANGFUSE_HOST
 // LANGFUSE_PUBLIC_KEY
 // LANGFUSE_SECRET_KEY
 func main() {
-	user := `....B
+	maze := `
+....B
 .###.
 ...#.
 A#...
 `
-
+	prompt, err := api.BuildPrompt("prompt.txt", "{{INPUT}}", maze)
+	if err != nil {
+		log.Fatalf("Error fetching prompt: %+v", err)
+	}
 	expected := "UP, UP, UP, RIGHT, RIGHT, RIGHT, RIGHT"
-	resp, err := tracedCompletionExpert(system, user, "gpt-4o", "json_object", expected)
+	resp, err := tracedCompletionExpert("you are helpful assistant", prompt, "gpt-4o-mini", "json_object", expected)
 	if err != nil {
 		panic(err)
 	}
@@ -87,7 +38,7 @@ A#...
 	} else {
 		fmt.Println(resp.Error.Message)
 	}
-	fmt.Println(user)
+	fmt.Println(maze)
 }
 
 func tracedCompletionExpert(system, user, gptModel, format, expectedInResponse string) (*openai.GPTResponse, error) {
