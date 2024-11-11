@@ -3,7 +3,7 @@ Zadanie:
     2. Zastanów się nad tym, w jakim mieście znajduje się ta uczelnia.
     3. Wywnioskuj nazwę uczelni.
     4. Dla wywnioskowanej uczelni, wymień w formie listy, nazwy wszystkich wydziałów tej uczelni jakie znasz, nawet jeśli nie są wymieniowe w tekście.
-    5. Wybierz wydział uczelni, na której pracował profesor Maj.
+    5. Wybierz wydział uczelni, na którym pracował profesor Maj.
     6. Podaj adres tego wydziału.
 
 Tekst:

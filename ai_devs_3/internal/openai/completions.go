@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	openAIURL = "https://api.openai.com/v1/chat/completions"
+	chatCompletionsURL = "https://api.openai.com/v1/chat/completions"
 )
 
 type GPTRequest struct {
@@ -115,7 +115,7 @@ func CompletionExpert(system, user, model, responseFormat string, maxTokens int,
 		return nil, err
 	}
 
-	req, err := http.NewRequest("POST", openAIURL, bytes.NewReader(reqBytes))
+	req, err := http.NewRequest("POST", chatCompletionsURL, bytes.NewReader(reqBytes))
 	if err != nil {
 		return nil, err
 	}
