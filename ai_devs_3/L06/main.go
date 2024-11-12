@@ -16,6 +16,7 @@ import (
 )
 
 const verificationURL = "https://centrala.ag3nts.org/report"
+const recordingsZipURL = "https://centrala.ag3nts.org/dane/przesluchania.zip"
 
 func downloadZipIfDoesntExistYet(url, destination string) error {
 	// Check if the destination file already exists
@@ -157,7 +158,7 @@ func readOrTranscribe(sourceDir string) (map[string]string, error) {
 
 func main() {
 	// Download the ZIP if doesn't exist yet
-	err := downloadZipIfDoesntExistYet("https://drive.google.com/file/d/1Rzyw10RDJdz3jQ9_VcO65lXRUtY1vAas/view?usp=sharing", "downloads/przesluchania.zip")
+	err := downloadZipIfDoesntExistYet(recordingsZipURL, "downloads/przesluchania.zip")
 	if err != nil {
 		log.Fatalf("failed to get the audio recordings: +%+v", err)
 	}
