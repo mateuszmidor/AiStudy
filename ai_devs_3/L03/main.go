@@ -72,7 +72,7 @@ func main() {
 
 		// Handle test questions
 		if item.Test != nil && item.Test.A == "???" {
-			answer, err := openai.CompletionCheap(item.Test.Q, "", "")
+			answer, err := openai.CompletionCheap(item.Test.Q, "", nil)
 			if err != nil {
 				fmt.Printf("Error getting answer for question '%s': %v\n", item.Test.Q, err)
 			} else {

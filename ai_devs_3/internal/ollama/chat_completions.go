@@ -58,8 +58,8 @@ type OllamaResponse struct {
 
 // For image param, use function: ImageFromBytes, ImageFromFile, ImageFromURL.
 // Example: ollama.Completion("Answer in 1 word: what is in the picture", "", ollama.ImageFromFile("avocado.png"), "llama3.2-vision:11b")
-func Completion(user, system, image, model string) (string, error) {
-	resp, err := CompletionExpert(user, system, image, model, "")
+func Completion(user, system string, images []string, model string) (string, error) {
+	resp, err := CompletionExpert(user, system, images, model, "")
 	if err != nil {
 		return "", err
 	}
@@ -67,18 +67,14 @@ func Completion(user, system, image, model string) (string, error) {
 }
 
 // For image param, use function: ImageFromBytes, ImageFromFile, ImageFromURL.
-func CompletionExpert(user, system, image, model, responseFormat string) (*OllamaResponse, error) {
+func CompletionExpert(user, system string, images []string, model, responseFormat string) (*OllamaResponse, error) {
 	// Initialize the payload
 	messages := []Message{}
 	if system != "" {
 		systemMessage := Message{Role: "system", Content: system}
 		messages = append(messages, systemMessage)
 	}
-	if user != "" || image != "" {
-		images := []string{}
-		if image != "" {
-			images = []string{image}
-		}
+	if user != "" || len(images) > 0 {
 		userMessage := Message{Role: "user", Content: user, Images: images}
 		messages = append(messages, userMessage)
 	}

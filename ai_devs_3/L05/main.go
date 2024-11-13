@@ -27,7 +27,7 @@ func main() {
 	}
 
 	// use local LLM to censor personal information
-	censoredData, err := ollama.Completion(prompt, "llama3")
+	censoredData, err := ollama.Completion(prompt, "", nil, "llama3")
 	if err != nil {
 		log.Fatalf("%+v", err)
 	}

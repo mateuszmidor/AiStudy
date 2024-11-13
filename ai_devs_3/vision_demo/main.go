@@ -30,7 +30,7 @@ func main() {
 // - llama3.2-vision:11b - 4m13s
 func demo_ollama(model string) {
 	fmt.Println("demo_ollama", model)
-	result, err := ollama.Completion("describe what's on the picture", "Be eloquent", ollama.ImageFromFile("../avocado.png"), model)
+	result, err := ollama.Completion("describe what's on the picture", "Be eloquent", []string{ollama.ImageFromFile("../avocado.png")}, model)
 	if err != nil {
 		fmt.Printf("ollama error: %+v", err)
 		return
@@ -40,7 +40,7 @@ func demo_ollama(model string) {
 
 func demo_openai(model string) {
 	fmt.Println("demo_openai", model)
-	result, err := openai.Completion("describe what's on the picture", "Be eloquent", openai.ImageFromFile("../avocado.png"), model)
+	result, err := openai.Completion("describe what's on the picture", "Be eloquent", []string{openai.ImageFromFile("../avocado.png")}, model)
 	if err != nil {
 		fmt.Printf("openai error: %+v", err)
 		return

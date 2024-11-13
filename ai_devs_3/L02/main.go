@@ -64,7 +64,7 @@ func verifyThatYouAreRobot() string {
 	// Step 2: Use the Completion function to get an answer from OpenAI
 	prompt := fmt.Sprintf(promptTemplate, question.Text)
 	fmt.Printf("LLM prompt: %v\n", prompt)
-	answer, err := openai.CompletionStrong(prompt, "", "")
+	answer, err := openai.CompletionStrong(prompt, "", nil)
 	if err != nil {
 		return fmt.Sprintf("Error getting completion: %v", err)
 	}
