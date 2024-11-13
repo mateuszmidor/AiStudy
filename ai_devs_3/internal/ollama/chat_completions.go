@@ -18,11 +18,11 @@ const chatCompletionsURL = "http://localhost:11434/api/chat"
 
 // https://github.com/ollama/ollama/blob/main/docs/api.md#generate-a-chat-completion
 type OllamaRequest struct {
-	Model     string    `json:"model"`                // REQUIRED, [llama3:8b]
+	Model     string    `json:"model"`                // REQUIRED, [llama3:8b, llama3.2-vision:11b, llava:7b]
 	Messages  []Message `json:"messages,omitempty"`   // the messages of the chat, this can be used to keep a chat memory
 	Tools     any       `json:"tools,omitempty"`      // tools for the model to use if supported. Requires stream to be set to false
 	Format    string    `json:"format,omitempty"`     // [json]
-	Options   Options   `json:"options,omitempty"`    // additional model parameters listed in the documentation for the Modelfile such as temperature
+	Options   *Options  `json:"options,omitempty"`    // additional model parameters listed in the documentation for the Modelfile such as temperature
 	Stream    bool      `json:"stream"`               // default is TRUE if no flag provided
 	KeepAlive string    `json:"keep_alive,omitempty"` // controls how long the model will stay loaded into memory following the request (default: 5m)
 }
@@ -41,9 +41,9 @@ type Options struct {
 }
 
 type OllamaResponse struct {
-	Model              string    `json:"model"` // [llama3:8b]
+	Model              string    `json:"model"` // used model
 	CreatedAt          time.Time `json:"created_at"`
-	Message            Message   `json:"message"`
+	Message            Message   `json:"message"` // reponse message, if success
 	Done               bool      `json:"done"`
 	DoneReason         string    `json:"done_reason"`
 	Context            []int     `json:"context"`
@@ -53,7 +53,7 @@ type OllamaResponse struct {
 	PromptEvalDuration int64     `json:"prompt_eval_duration"`
 	EvalCount          int       `json:"eval_count"` // response tokens
 	EvalDuration       int64     `json:"eval_duration"`
-	Error              string    `json:"error"` // error message if error returned
+	Error              string    `json:"error"` // error message, if error
 }
 
 // For image param, use function: ImageFromBytes, ImageFromFile, ImageFromURL.
