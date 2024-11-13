@@ -43,7 +43,7 @@ A#...
 
 func tracedCompletionExpert(system, user, gptModel, format, expectedInResponse string) (*openai.GPTResponse, error) {
 	// get completion from OpenAI
-	result, err := openai.CompletionExpert(system, user, gptModel, format, 1000, 0.0)
+	result, err := openai.CompletionExpert(system, user, "", gptModel, format, 1000, 0.0)
 	if err != nil {
 		panic(err)
 	}

@@ -190,7 +190,7 @@ func main() {
 
 	fmt.Println(prompt)
 	// ask LLM
-	answer, err := openai.CompletionCheap(prompt)
+	answer, err := openai.CompletionCheap(prompt, "", "")
 	if err != nil {
 		log.Fatalf("Error getting answer for question '%s': %v\n", prompt, err)
 	}

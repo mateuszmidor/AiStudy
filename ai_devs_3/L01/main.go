@@ -122,7 +122,7 @@ func main() {
 	htmlForm := fetchHTML(loginFormURL)
 	question := extractQuestionFromHTMLForm(htmlForm)
 	prompt := "Odpowiedz maksymalnie zwięźle na ponizsze pytanie, w odpowiedzi podaj wyłącznie liczbę bez zadnego dodatkowego tekstu:\n" + question
-	answer, err := openai.CompletionCheap(prompt)
+	answer, err := openai.CompletionCheap(prompt, "", "")
 	if err != nil {
 		fmt.Println("Error:", err)
 		return
@@ -132,6 +132,6 @@ func main() {
 	fmt.Println("Answer:")
 	fmt.Println(answer)
 	response := submitLoginCredentials("tester", "574e112a", answer, loginFormURL)
-	fmt.Println(":")
+	fmt.Println("")
 	fmt.Println(response)
 }
