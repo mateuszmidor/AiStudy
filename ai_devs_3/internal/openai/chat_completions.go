@@ -85,18 +85,22 @@ func (e *GPTError) Error() string {
 	return e.Message
 }
 
-// For image param, use function: ImageFromBytes, ImageFromFile, ImageFromURL
+// For image param, use function: ImageFromBytes, ImageFromFile, ImageFromURL.
+// Example: openai.CompletionCheap("describe what's on the picture", "Use max 3 words", openai.ImageFromFile("./avocado.png"))
 func CompletionCheap(user, system, image string) (string, error) {
 	return Completion(user, system, image, "gpt-4o-mini")
 }
 
-// For image param, use function: ImageFromBytes, ImageFromFile, ImageFromURL
+// For image param, use function: ImageFromBytes, ImageFromFile, ImageFromURL.
+// Example: openai.CompletionStrong("describe what's on the picture", "Use max 3 words", openai.ImageFromFile("./avocado.png"))
 func CompletionStrong(user, system, image string) (string, error) {
 	return Completion(user, system, image, "gpt-4o")
 }
 
+// For image param, use function: ImageFromBytes, ImageFromFile, ImageFromURL.
+// Example: openai.Completion("describe what's on the picture", "Use max 3 words", openai.ImageFromFile("./avocado.png"), "gpt-4o-mini")
 func Completion(user, system, image, model string) (string, error) {
-	gptResp, err := CompletionExpert(system, user, image, model, "text", 1000, 0.0)
+	gptResp, err := CompletionExpert(user, system, image, model, "text", 1000, 0.0)
 	if err != nil {
 		return "", err
 	}
@@ -111,8 +115,9 @@ func Completion(user, system, image, model string) (string, error) {
 }
 
 // CompletionExpert generates chat completion, with image support.
-// For image param, use function: ImageFromBytes, ImageFromFile, ImageFromURL
-func CompletionExpert(system, user, image, model, responseFormat string, maxTokens int, temperature float32) (*GPTResponse, error) {
+// For image param, use function: ImageFromBytes, ImageFromFile, ImageFromURL.
+// Example: openai.Completion("describe what's on the picture", "Use max 3 words", openai.ImageFromFile("./avocado.png"), "gpt-4o-mini", 256, 0.0)
+func CompletionExpert(user, system, image, model, responseFormat string, maxTokens int, temperature float32) (*GPTResponse, error) {
 	apiKey := os.Getenv("OPENAI_API_KEY") // Get the API key from the environment variable
 	if apiKey == "" {
 		return nil, errors.New("OpenAI API key is not set")
