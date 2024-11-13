@@ -74,15 +74,10 @@ func CompletionExpert(user, system string, images []string, model, responseForma
 		systemMessage := Message{Role: "system", Content: system}
 		messages = append(messages, systemMessage)
 	}
-	if user != "" {
-		userMessage := Message{Role: "user", Content: user}
+	if user != "" || len(images) > 0 {
+		userMessage := Message{Role: "user", Content: user, Images: images} // note that llama3.2-vision doesn't support multiple images in single message
 		messages = append(messages, userMessage)
 	}
-	for _, image := range images {
-		userMessage := Message{Role: "user", Images: []string{image}}
-		messages = append(messages, userMessage)
-	}
-
 	payload := &OllamaRequest{
 		Model:    model,
 		Stream:   false,
