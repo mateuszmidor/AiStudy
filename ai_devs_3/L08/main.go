@@ -9,19 +9,6 @@ import (
 	"github.com/mateuszmidor/AiStudy/ai_devs_3/internal/openai"
 )
 
-func extractDescription(descriptionJSON string) string {
-	var result map[string]interface{}
-	err := json.Unmarshal([]byte(descriptionJSON), &result)
-	if err != nil {
-		log.Fatalf("Error parsing JSON: %+v", err)
-	}
-	description, ok := result["description"].(string)
-	if !ok {
-		log.Fatalf("Description not found or is not a string")
-	}
-	return description
-
-}
 func main() {
 	// fetch robot JSON description
 	apikey := api.ApiKey()
@@ -57,4 +44,17 @@ func main() {
 		return
 	}
 	fmt.Println(result)
+}
+
+func extractDescription(descriptionJSON string) string {
+	var result map[string]interface{}
+	err := json.Unmarshal([]byte(descriptionJSON), &result)
+	if err != nil {
+		log.Fatalf("Error parsing JSON: %+v", err)
+	}
+	description, ok := result["description"].(string)
+	if !ok {
+		log.Fatalf("Description not found or is not a string")
+	}
+	return description
 }

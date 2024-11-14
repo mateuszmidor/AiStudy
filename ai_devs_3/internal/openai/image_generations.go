@@ -11,7 +11,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-const openAIURL = "https://api.openai.com/v1/images/generations"
+const imageGenerationsURL = "https://api.openai.com/v1/images/generations"
 
 type DalleGenerateRequest struct {
 	Prompt string `json:"prompt"`                    // REQUIRED
@@ -78,7 +78,7 @@ func GenerationExpert(prompt, model, size, format string) (*DalleGenerateRespons
 		return nil, err
 	}
 
-	// assuming you want to return the URL of the first generated image
+	// SUCCESS
 	return &generateResponse, nil
 }
 
@@ -97,7 +97,7 @@ func preparePromptToImageRequest(prompt, model, size, format string, apiKey stri
 		return nil, errors.New(err.Error())
 	}
 
-	req, err := http.NewRequest("POST", openAIURL, bytes.NewReader(reqBytes))
+	req, err := http.NewRequest("POST", imageGenerationsURL, bytes.NewReader(reqBytes))
 	if err != nil {
 		return nil, errors.New(err.Error())
 	}
