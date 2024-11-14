@@ -83,7 +83,7 @@ func main() {
 	}
 
 	// Output the corrected data
-	data.Apikey = os.Getenv("AIDEVS3_API_KEY")
+	data.Apikey = api.ApiKey()
 	result, err := api.VerifyTaskAnswer("JSON", data, verifyURL)
 	if err != nil {
 		fmt.Println("Answer verification failed:", err)

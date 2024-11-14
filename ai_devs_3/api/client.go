@@ -12,6 +12,8 @@ import (
 	"github.com/pkg/errors"
 )
 
+const VerificationURL = "https://centrala.ag3nts.org/report"
+
 // apiRequest represents the structure for API requests
 type apiRequest struct {
 	Task   string      `json:"task"`
@@ -25,6 +27,10 @@ type apiResponse struct {
 	Message string `json:"message"` // response message
 }
 
+func ApiKey() string {
+	return os.Getenv("AIDEVS3_API_KEY")
+}
+
 // VerifyTaskAnswer sends task answer to the API and returns error and response message
 func VerifyTaskAnswer(task string, answer interface{}, verificationURL string) (string, error) {
 	client := &http.Client{}
@@ -32,7 +38,7 @@ func VerifyTaskAnswer(task string, answer interface{}, verificationURL string) (
 	// Create the request body
 	reqBody := apiRequest{
 		Task:   task,
-		APIKey: os.Getenv("AIDEVS3_API_KEY"),
+		APIKey: ApiKey(),
 		Answer: answer,
 	}
 

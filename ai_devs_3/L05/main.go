@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"log"
-	"os"
 
 	"github.com/mateuszmidor/AiStudy/ai_devs_3/api"
 	"github.com/mateuszmidor/AiStudy/ai_devs_3/internal/ollama"
@@ -13,7 +12,7 @@ const verificationURL = "https://centrala.ag3nts.org/report"
 
 func main() {
 	// fetch the task input data
-	apikey := os.Getenv("AIDEVS3_API_KEY")
+	apikey := api.ApiKey()
 	taskUrl := "https://centrala.ag3nts.org/data/" + apikey + "/cenzura.txt"
 	personalData, err := api.FetchData(taskUrl)
 	if err != nil {
