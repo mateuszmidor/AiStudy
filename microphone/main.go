@@ -25,7 +25,7 @@ func main() {
 	}
 	defer microphone.Terminate()
 
-	stream, format, err := microphone.OpenDefaultStream(44100, 2)
+	stream, format, err := microphone.OpenDefaultStream(44100, 1)
 	if err != nil {
 		log.Fatal(err)
 	}
