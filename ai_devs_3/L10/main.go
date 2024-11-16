@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"io"
 	"log"
@@ -11,60 +10,11 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/JohannesKaufmann/html-to-markdown/v2"
+	htmltomarkdown "github.com/JohannesKaufmann/html-to-markdown/v2"
 	"github.com/mateuszmidor/AiStudy/ai_devs_3/api"
 	"github.com/mateuszmidor/AiStudy/ai_devs_3/internal/openai"
 	"github.com/pkg/errors"
 )
-
-const filesZipURL = "https://centrala.ag3nts.org/dane/pliki_z_fabryki.zip"
-
-type FileCategories struct {
-	People   []string `json:"people"`
-	Hardware []string `json:"hardware"`
-}
-
-func downloadZipIfDoesntExistYet(url, destination string) error {
-	// Check if the destination file already exists
-	if _, err := os.Stat(destination); err == nil {
-		// File already exists, no need to download
-		return nil
-	} else if !os.IsNotExist(err) {
-		// An error other than "file does not exist" occurred
-		return errors.Wrap(err, "failed to check if destination file exists")
-	}
-
-	// Create the downloads directory if it doesn't exist
-	downloadsDir := filepath.Dir(destination)
-	if _, err := os.Stat(downloadsDir); os.IsNotExist(err) {
-		err = os.Mkdir(downloadsDir, os.ModePerm)
-		if err != nil {
-			return errors.Wrap(err, "failed to create downloads directory")
-		}
-	}
-
-	// Download the ZIP file
-	resp, err := http.Get(url)
-	if err != nil {
-		return errors.Wrap(err, "failed to download file")
-	}
-	defer resp.Body.Close()
-
-	// Create the destination file to store the downloaded ZIP
-	destFile, err := os.Create(destination)
-	if err != nil {
-		return errors.Wrap(err, "failed to create destination file")
-	}
-	defer destFile.Close()
-
-	// Write the response body to the destination file
-	_, err = io.Copy(destFile, resp.Body)
-	if err != nil {
-		return errors.Wrap(err, "failed to write to destination file")
-	}
-
-	return nil
-}
 
 // readOrTranscribeAudio returns key-value pairs: {filename: transcription} for all .mp3 files found under sourceDir
 func readOrTranscribeAudio(sourceDir string) (map[string]string, error) {
@@ -112,14 +62,14 @@ func readOrTranscribeAudio(sourceDir string) (map[string]string, error) {
 	return transcriptions, nil
 }
 
-// readOrTranscribeImages returns key-value pairs: {filename: transcription} for all .png files found under sourceDir
-func readOrTranscribeImages(sourceDir string) (map[string]string, error) {
+// readOrDescribeImages returns key-value pairs: {filename: description} for all .png files found under sourceDir
+func readOrDescribeImages(sourceDir string) (map[string]string, error) {
 	files, err := os.ReadDir(sourceDir)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to read directory")
 	}
 
-	transcriptions := make(map[string]string)
+	descriptions := make(map[string]string)
 
 	for _, file := range files {
 		// skip non-image files
@@ -127,28 +77,28 @@ func readOrTranscribeImages(sourceDir string) (map[string]string, error) {
 			continue
 		}
 
-		// just read the transcription if already exists
+		// just read the description if already exists
 		txtFileName := filepath.Join(sourceDir, file.Name()+".txt")
 		if _, err := os.Stat(txtFileName); err == nil {
 			content, err := os.ReadFile(txtFileName)
 			if err != nil {
-				log.Printf("failed to read transcription file %s: %+v\n", txtFileName, err)
+				log.Printf("failed to read description file %s: %+v\n", txtFileName, err)
 			} else {
-				transcriptions[file.Name()] = string(content)
+				descriptions[file.Name()] = string(content)
 			}
 			continue
 		}
 
-		// do transcribe
+		// do describe
 		imageFileName := filepath.Join(sourceDir, file.Name())
-		log.Println("transcribing", imageFileName)
-		system := "Read and return all the text from the attached image"
-		user := "Return only the text from the image, WHITOUT any additional comments"
+		log.Println("describing", imageFileName)
+		system := "You MUST use Polish language and Polish ONLY"
+		user := "Describe what thing is on the picture, in case of a place, tell me the exact name of the place"
 		text, err := openai.CompletionCheap(user, system, []string{openai.ImageFromFile(imageFileName)})
 		if err != nil {
 			log.Printf("failed: %+v\n", err)
 		}
-		transcriptions[file.Name()] = text
+		descriptions[file.Name()] = text
 
 		// save transcription for next-time use
 		err = os.WriteFile(txtFileName, []byte(text), os.ModePerm)
@@ -157,96 +107,10 @@ func readOrTranscribeImages(sourceDir string) (map[string]string, error) {
 		}
 	}
 
-	return transcriptions, nil
+	return descriptions, nil
 }
 
-// buid single text document from multiple .txt files.
-// Example output:
-// [filename1]
-// file content 1
-
-// [filename2]
-// file content 2
-
-// [filename3]
-// file content 3
-func buildCollectiveDocumentFromTxtFiles(srcDir string) string {
-
-	var allDocuments string
-
-	files, err := os.ReadDir(srcDir)
-	if err != nil {
-		log.Fatalf("failed to read directory: %+v", err)
-	}
-	for _, file := range files {
-
-		if strings.ToLower(filepath.Ext(file.Name())) != ".txt" {
-			continue
-		}
-
-		originalFileName := removeExtraExt(file.Name())
-
-		filePath := filepath.Join(srcDir, file.Name())
-		content, err := os.ReadFile(filePath)
-		if err != nil {
-			log.Printf("failed to read file %s: %+v\n", filePath, err)
-			continue
-		}
-
-		allDocuments += fmt.Sprintf("[%s]\n%s\n\n", originalFileName, string(content))
-	}
-	return allDocuments
-}
-
-func categorizeFilesInCollectiveDocument(documentWithMultipleFiles string) FileCategories {
-	const system = `
-	You will be given a text document composed of a series FileName-FileContent blocks. Example input document:
-	<example_input>
-	[filename1]
-	file content 1
-
-	[filename2]
-	file content 2
-
-	[filename3]
-	file content 3
-	</example_input>
-	Your role is to categorize content of each file to be either:
-	1. people-related (only people which were caught or seen) 
-	2. hardware-related (only hardware which was physically repaired, not the hardware that had software updated)
-	3. unrelated to people or hardware
-	Return the names of files that are either people-related or hardware-related in form of JSON, ignore the unrelated files. Example JSON result:
-	<example_output>
-	{
-		"people": ["plik1.txt", "plik2.mp3", "plikN.png"],
-		"hardware": ["plik4.txt", "plik5.png", "plik6.mp3"],
-	}
-	</example_output>
-	`
-	user := "The document: \n" + documentWithMultipleFiles
-	resultString, err := openai.CompletionExpert(user, system, nil, "gpt-4o-mini", "json_object", 1000, 0.0)
-	if err != nil {
-		log.Fatalf("openai returend error: %+v", err)
-	}
-
-	fmt.Println(resultString.Error)
-	result := FileCategories{}
-	err = json.Unmarshal([]byte(resultString.Choices[0].Message.Content), &result)
-	if err != nil {
-		log.Fatalf("Error deserializing JSON: %+v", err)
-	}
-	return result
-}
-
-func removeExtraExt(filename string) string {
-	ext := filepath.Ext(filename)
-	base := strings.TrimSuffix(filename, ext)
-	if strings.Contains(base, ".") {
-		return base
-	}
-	return filename
-}
-
+// input format: "01=gdzie zaczyna się wisła?""
 func splitIdQuestion(questions string) map[string]string {
 	result := make(map[string]string)
 	lines := strings.Split(questions, "\n")
@@ -260,14 +124,11 @@ func splitIdQuestion(questions string) map[string]string {
 		}
 	}
 	return result
-
 }
 
-func fixHyperlinks(document string) string {
-	// return strings.ReplaceAll(document, "(i/", "(https://centrala.ag3nts.org/dane/i/")
-	return document
-}
-
+// Examples:
+// ![](i/rynek.png) -> i/rynek.png
+// [rafal\_dyktafon.mp3](i/rafal_dyktafon.mp3) -> i/rafal_dyktafon.mp3
 func extractLinks(document string) []string {
 	var links []string
 	re := regexp.MustCompile(`\((i/[^)]+)\)`)
@@ -280,13 +141,13 @@ func extractLinks(document string) []string {
 	return links
 }
 
-func downloadFromHyperlinks(links []string) error {
-	for _, link := range links {
+func downloadFromHyperlinks(filePaths []string) error {
+	downloadsDir := "i" // article.md multimedia live in such folder, so converted article.md will work stright away
+	for _, filePath := range filePaths {
 		// Append the prefix to the link
-		fullURL := "https://centrala.ag3nts.org/dane/" + link
+		fileURL := "https://centrala.ag3nts.org/dane/" + filePath
 
 		// Create the downloads directory if it doesn't exist
-		downloadsDir := "downloads"
 		if _, err := os.Stat(downloadsDir); os.IsNotExist(err) {
 			err = os.Mkdir(downloadsDir, os.ModePerm)
 			if err != nil {
@@ -295,13 +156,13 @@ func downloadFromHyperlinks(links []string) error {
 		}
 
 		// Determine the destination file path
-		fileName := filepath.Base(link)
+		fileName := filepath.Base(filePath)
 		destination := filepath.Join(downloadsDir, fileName)
 
 		// Download the file
-		resp, err := http.Get(fullURL)
+		resp, err := http.Get(fileURL)
 		if err != nil {
-			return errors.Wrapf(err, "failed to download file from %s", fullURL)
+			return errors.Wrapf(err, "failed to download file from %s", fileURL)
 		}
 		defer resp.Body.Close()
 
@@ -319,6 +180,31 @@ func downloadFromHyperlinks(links []string) error {
 		}
 	}
 	return nil
+}
+
+func substiteDescriptionsForMultimedia(document string, descriptions map[string]string) string {
+	// Regular expression to find multimedia links in the format ![](i/filename)
+	re := regexp.MustCompile(`\!?\[.*\]\((.*)\)`)
+
+	// Replace each multimedia link with its corresponding description
+	result := re.ReplaceAllStringFunc(document, func(link string) string {
+		// Extract the filename from the link
+		matches := re.FindStringSubmatch(link)
+		if len(matches) > 1 {
+			filename := filepath.Base(matches[1])
+			// Check if there is a description for this filename
+			if description, exists := descriptions[filename]; exists {
+				// Return the description enclosed in triple backticks
+				return "```\n" + description + "\n```"
+			} else {
+				fmt.Println("no description found for:", filename)
+			}
+		}
+		// If no description is found, return the original link
+		return link
+	})
+
+	return result
 }
 
 func main() {
@@ -339,18 +225,63 @@ func main() {
 		log.Fatalf("Error fetching questions: %+v", err)
 	}
 
-	// transform article to MarkDown for LLM to understand better
+	// transform article to MarkDown for LLM to understand it better
 	articleMD, err := htmltomarkdown.ConvertString(articleHTML)
 	if err != nil {
 		log.Fatal(err)
 	}
-	fixedArticleMD := fixHyperlinks(articleMD)
-	err = os.WriteFile("article.md", []byte(fixedArticleMD), os.ModePerm)
+	err = os.WriteFile("article.md", []byte(articleMD), os.ModePerm)
 	if err != nil {
 		log.Fatalf("failed to save article to file article.md: %+v", err)
 	}
 
-	// extract all multimedia links
+	// extract all multimedia links and download files for transcrption
 	multimediaHyperlinks := extractLinks(articleMD)
 	downloadFromHyperlinks(multimediaHyperlinks)
+	audioTranscriptions, err := readOrTranscribeAudio("i/")
+	if err != nil {
+		log.Fatal(err)
+	}
+	imageTranscriptions, err := readOrDescribeImages("i/")
+	if err != nil {
+		log.Fatal(err)
+	}
+	multimediaAsText := make(map[string]string)
+	for k, v := range audioTranscriptions {
+		multimediaAsText[k] = v
+	}
+	for k, v := range imageTranscriptions {
+		multimediaAsText[k] = v
+	}
+
+	// substitute hyperlinks with media transcriptions
+	substitutedArticleMD := substiteDescriptionsForMultimedia(articleMD, multimediaAsText)
+	err = os.WriteFile("substitutedArticle.md", []byte(substitutedArticleMD), os.ModePerm)
+	if err != nil {
+		log.Fatalf("failed to save substituted article to file substitutedArticle.md: %+v", err)
+	}
+
+	// answer the questions
+	answers := map[string]string{}
+	for id, question := range idQuestionMap {
+		fmt.Println(id, "-", question)
+		system := "Odpowiedz zwięźle na zadane pytanie na podstawie Dokumentu źródłowego dostarczonego w formacie MarkDown"
+		user := question + " Dokument źródłowy:\n" + substitutedArticleMD
+		answer, err := openai.CompletionCheap(user, system, nil)
+		if err != nil {
+			log.Printf("OpenAI returned error: %+v", err)
+			continue
+		}
+		fmt.Println(answer)
+		fmt.Println()
+		answers[id] = answer
+	}
+
+	// Verify answer
+	result, err := api.VerifyTaskAnswer("arxiv", answers, api.VerificationURL)
+	if err != nil {
+		fmt.Println("Answer verification failed:", err)
+		return
+	}
+	fmt.Println(result)
 }
