@@ -161,8 +161,8 @@ func readOrTranscribeAudio(sourceDir string) (map[string]string, error) {
 	return transcriptions, nil
 }
 
-// readOrTranscribeImage returns key-value pairs: {filename: transcription} for all .png files found under sourceDir
-func readOrTranscribeImage(sourceDir string) (map[string]string, error) {
+// readOrTranscribeImages returns key-value pairs: {filename: transcription} for all .png files found under sourceDir
+func readOrTranscribeImages(sourceDir string) (map[string]string, error) {
 	files, err := os.ReadDir(sourceDir)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to read directory")
@@ -209,22 +209,32 @@ func readOrTranscribeImage(sourceDir string) (map[string]string, error) {
 	return transcriptions, nil
 }
 
-func categorizeFiles(srcDir string) FileCategories {
-	// 1. collect all files into one big document
+// buid single text document from multiple .txt files.
+// Example output:
+// [filename1]
+// file content 1
+
+// [filename2]
+// file content 2
+
+// [filename3]
+// file content 3
+func buildCollectiveDocumentFromTxtFiles(srcDir string) string {
+
+	var allDocuments string
+
 	files, err := os.ReadDir(srcDir)
 	if err != nil {
 		log.Fatalf("failed to read directory: %+v", err)
 	}
-	var allDocuments string
 	for _, file := range files {
-		// skip non-txt files
+
 		if strings.ToLower(filepath.Ext(file.Name())) != ".txt" {
 			continue
 		}
-		// transform file.png.txt into file.png
+
 		originalFileName := removeExtraExt(file.Name())
 
-		// read the txt file
 		filePath := filepath.Join(srcDir, file.Name())
 		content, err := os.ReadFile(filePath)
 		if err != nil {
@@ -232,13 +242,14 @@ func categorizeFiles(srcDir string) FileCategories {
 			continue
 		}
 
-		// compose big document from txt files
 		allDocuments += fmt.Sprintf("[%s]\n%s\n\n", originalFileName, string(content))
 	}
+	return allDocuments
+}
 
-	// 2. categorize
-	system := `
-	You will be given a text document composed of a series FileName-FileContent blocks, like this:
+func categorizeFilesInCollectiveDocument(documentWithMultipleFiles string) FileCategories {
+	const system = `
+	You will be given a text document composed of a series FileName-FileContent blocks. Example input document:
 	<example_input>
 	[filename1]
 	file content 1
@@ -261,7 +272,7 @@ func categorizeFiles(srcDir string) FileCategories {
 	}
 	</example_output>
 	`
-	user := "The document: \n" + allDocuments
+	user := "The document: \n" + documentWithMultipleFiles
 	resultString, err := openai.CompletionExpert(user, system, nil, "gpt-4o-mini", "json_object", 1000, 0.0)
 	if err != nil {
 		log.Fatalf("openai returend error: %+v", err)
@@ -305,13 +316,19 @@ func main() {
 	}
 
 	// Transcribe the files
-	_, err = readOrTranscribeImage("downloads/")
+	_, err = readOrTranscribeImages("downloads/")
 	if err != nil {
 		log.Fatalf("failed to transcribe audio recordings: %+v", err)
 	}
 
-	answer := categorizeFiles("downloads/")
+	// Build single document from multiple .txt files
+	document := buildCollectiveDocumentFromTxtFiles("downloads/")
+
+	// Categorize files in document
+	answer := categorizeFilesInCollectiveDocument(document)
 	fmt.Printf("%+v\n", answer)
+
+	// Verify answer
 	result, err := api.VerifyTaskAnswer("kategorie", answer, api.VerificationURL)
 	if err != nil {
 		fmt.Println("Answer verification failed:", err)
