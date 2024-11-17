@@ -21,7 +21,7 @@ const (
 type GPTRequest struct {
 	Model          string           `json:"model"`                     // REQUIRED, [gpt-3.5-turbo, gpt-4-turbo-preview, gpt-4o-mini, gpt-4o]
 	Messages       []RequestMessage `json:"messages"`                  // REQUIRED, at least 1 "user" message
-	ResponseFormat *Format          `json:"response_format,omitempty"` // [text, json_object]
+	ResponseFormat *Format          `json:"response_format,omitempty"` // [text, json_object, json_schema]
 	NumAnswers     uint             `json:"n,omitempty"`               // [1..+oo], default: 1; cheapest option
 	MaxTokens      int              `json:"max_tokens,omitempty"`      // [1..+oo], default: ?; max tokens generated for answer before the generation is hard-cut
 	Temperature    float32          `json:"temperature,omitempty"`     // [0.0..2.0], default: 0 (auto-select); use high for creativity and randomness
@@ -29,7 +29,7 @@ type GPTRequest struct {
 
 type RequestMessage struct {
 	Role    string        `json:"role"`    // [user, system, assistant]; assistant means a previous GPT response; include it for interaction continuity
-	Content []ContentItem `json:"content"` // list of content items
+	Content []ContentItem `json:"content"` // list of content items; OpenAI supports sending multiple images in single message
 }
 
 type ContentItem struct {
