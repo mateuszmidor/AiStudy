@@ -14,7 +14,7 @@ func main() {
 	txtFilename := convertPdfToTxt(pdfFilename)
 	txtContent := readFile(txtFilename)
 
-	system := "Use only the information from Input Document."
+	system := "When answering the question, use only the information you can find in the Input Document. ONLY that information is allowed!"
 	user := "Question: " + question + "\nInput Document:\n" + txtContent
 	answer, err := openai.CompletionCheap(user, system, nil)
 	if err != nil {
