@@ -2,7 +2,11 @@
 
 ## First
 
-Make sure the `pdftotext` pdf -> txt converter cmd line tool is installed.
+Make sure the `pdftotext` pdf -> txt converter cmd line tool is installed:
+
+```sh
+brew install poppler
+```
 
 ## Then
 
