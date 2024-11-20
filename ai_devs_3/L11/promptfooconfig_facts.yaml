@@ -1,0 +1,26 @@
+# Learn more about building a configuration: https://promptfoo.dev/docs/configuration/guide
+description: "extract keywords from facts"
+
+prompts:
+  - file://prompt_facts.txt # can also read the prompt from a file
+
+providers:
+  - "openai:gpt-4o-mini"
+  # - "ollama:chat:llama3:8b" # first you need to run in terminal: ollama run llama3:8b
+  
+
+# Set up individual test cases
+tests:
+  - vars:
+      INPUT: Rafał Bomba przez długi czas pracował jako laborant w jednym z najbardziej zaawansowanych ośrodków badawczych, współpracując blisko z profesorem Andrzejem Majem. Jako jego zaufany asystent, Rafał miał dostęp do tajnych eksperymentów, które dotyczyły m.in. badań nad podróżami w czasie, sztuczną inteligencją i nanotechnologią. Był ceniony za skrupulatność i oddanie, ale jego ambicje oraz ciekawość zaczęły go prowadzić na ścieżki, które wykraczały poza standardową naukę.
+    assert:
+      - type: starts-with
+        value: "Rafał Bomba:"
+      - type: contains-all
+        value: 
+          - laborant
+          - ośrodek
+          - asystent
+          - eksperyment
+          - nanotechnologia
+ 

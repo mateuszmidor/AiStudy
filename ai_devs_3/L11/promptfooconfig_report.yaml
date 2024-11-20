@@ -1,0 +1,24 @@
+# Learn more about building a configuration: https://promptfoo.dev/docs/configuration/guide
+description: "extract keywords from report"
+
+prompts:
+  - file://prompt_report.txt # can also read the prompt from a file
+
+providers:
+  - "openai:gpt-4o-mini"
+  # - "ollama:chat:llama3:8b" # first you need to run in terminal: ollama run llama3:8b
+  
+
+# Set up individual test cases
+tests:
+  - vars:
+      INPUT: Godzina 03:26. Wstępny alarm wykrycia – ruch organiczny. Analiza wizualna i sensoryczna wykazała obecność lokalnej zwierzyny leśnej. Fałszywy alarm. Obszar bezpieczny, wracam na trasę patrolu. Spokój przywrócony.
+    assert:
+      - type: contains-all
+        value: 
+          - godzina
+          - alarm
+          - analiza
+          - zwierzyna
+          - obszar
+ 

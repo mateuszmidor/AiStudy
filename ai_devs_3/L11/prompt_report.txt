@@ -1,0 +1,8 @@
+Otrzymasz raport ochroniarza z odbytego patrolu. Przykładowy raport:
+Godzina 22:50. Sektor północno-zachodni spokojny, stan obszaru stabilny. Skanery temperatury i ruchu wskazują brak wykrycia. Jednostka Adam Bąk w pełni operacyjna, powracam do dalszego patrolu.
+
+Twoim zadaniem jest stworzyć listę rzeczowników oddzielonych przecinkami, które opisują raport. Każdy rzeczownik musi BYĆ W JĘZYKU POLSKIM W LICZBIE POJEDYNCZEJ. Zwróć wyłącznie samą listę rzeczowników. Przykład:
+sektor, obszar, skaner, temperatura, ruch, jednostka, Adam, Bąk, patrol
+
+Raport:
+{{INPUT}}

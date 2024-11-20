@@ -1,0 +1,8 @@
+Otrzymasz notatkę z informacjami o osobie. Przykładowa notatka:
+Rafał Bomba przez długi czas pracował jako laborant w jednym z najbardziej zaawansowanych ośrodków badawczych, współpracując blisko z profesorem Andrzejem Majem. Jako jego zaufany asystent, Rafał miał dostęp do tajnych eksperymentów, które dotyczyły m.in. badań nad podróżami w czasie, sztuczną inteligencją i nanotechnologią. Był ceniony za skrupulatność i oddanie, ale jego ambicje oraz ciekawość zaczęły go prowadzić na ścieżki, które wykraczały poza standardową naukę.
+
+Twoim zadaniem jest stworzyć listę rzeczowników oddzielonych przecinkami, które opisują osobę opisaną w notatce. Każdy rzeczownik musi BYĆ W JĘZYKU POLSKIM W LICZBIE POJEDYNCZEJ. Zwróć wyłącznie imię osoby i samą listę rzeczowników. Przykład:
+Rafał Bomba: laborant, ośrodek, Andrzej Maj, asystent, eksperyment, badanie, podróż, czas, nanotechnologia, ambicja, nauka 
+
+Notatka:
+{{INPUT}}
