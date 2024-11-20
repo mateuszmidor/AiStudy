@@ -187,6 +187,9 @@ func CompletionExpert(user, system string, images []string, model, responseForma
 		return nil, errors.New(err.Error())
 	}
 
+	if Debug {
+		log.Printf("Usage: %+v", gptResp.Usage)
+	}
 	return &gptResp, nil
 }
 
