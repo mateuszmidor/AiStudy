@@ -312,7 +312,8 @@ func (c *ChatWithMemory) ToolResponse(response string, toolCallID string) (*GPTR
 
 func (c *ChatWithMemory) DumpConversation() string {
 	var conversationHistory string
-	for _, message := range c.messages {
+	for i, message := range c.messages {
+		conversationHistory += fmt.Sprintf("%d.\n", i)
 		for _, toolCall := range message.ToolCalls {
 			conversationHistory += fmt.Sprintf("%s: [Tool Call %s] %s with arguments %s\n", message.Role, toolCall.ID, toolCall.Function.Name, toolCall.Function.Arguments)
 		}
