@@ -25,11 +25,15 @@ type GPTRequest struct {
 	NumAnswers     uint             `json:"n,omitempty"`               // [1..+oo], default: 1; cheapest option
 	MaxTokens      int              `json:"max_tokens,omitempty"`      // [1..+oo], default: ?; max tokens generated for answer before the generation is hard-cut
 	Temperature    float32          `json:"temperature,omitempty"`     // [0.0..2.0], default: 0 (auto-select); use high for creativity and randomness
+	Tools          []Tool           `json:"tools,omitempty"`           // list of functions available for the model to call
+	ToolChoice     string           `json:"tool_choice,omitempty"`     // [none,auto], default: auto, none forces GPT to use no tools (functions)
 }
 
 type RequestMessage struct {
-	Role    string        `json:"role"`    // [user, system, assistant]; assistant means a previous GPT response; include it for interaction continuity
-	Content []ContentItem `json:"content"` // list of content items; OpenAI supports sending multiple images in single message
+	Role       string        `json:"role"`                 // [user, system, assistant, tool]; assistant means a previous GPT response; include it for interaction continuity
+	Content    []ContentItem `json:"content"`              // list of content items; OpenAI supports sending multiple images in single message
+	ToolCalls  []ToolCall    `json:"tool_calls,omitempty"` // or GPT function call (response)
+	ToolCallID string        `json:"tool_call_id"`         // correlation ID for relevant ToolCall
 }
 
 type ContentItem struct {
@@ -47,6 +51,28 @@ type Format struct {
 	Type string `json:"type"` // [text, json_object]; if json_object -> MUST ask gpt directly to respond in JSON format
 }
 
+type Tool struct {
+	Type     string   `json:"type"`     // REQUIRED, [function]
+	Function Function `json:"function"` // REQUIRED
+}
+
+type Function struct {
+	Name        string      `json:"name"` // REQUIRED
+	Description string      `json:"description,omitempty"`
+	Parameters  *Parameters `json:"parameters,omitempty"`
+}
+
+// JSON Schema style
+type Parameters struct {
+	Type       string              `json:"type"`       // REQUIRED, [object]
+	Properties map[string]Property `json:"properties"` // map of property-name:property-details
+}
+
+type Property struct {
+	Type        string `json:"type"`                  // REQUIRED, [string, integer]
+	Description string `json:"description,omitempty"` // what is the purpose of this property? GPT likes details like this
+}
+
 type GPTResponse struct {
 	Choices []Choice  `json:"choices"` // number of returned choices is directly related to GPTRequest.NumAnsers
 	Created int64     `json:"created"`
@@ -58,16 +84,29 @@ type GPTResponse struct {
 }
 
 type Choice struct {
-	FinishReason string          `json:"finish_reason"` // [stop, length, content_filter]; stop means natural stop while length means MaxTokens hit
+	FinishReason string          `json:"finish_reason"` // [stop, length, content_filter, tool_calls]; stop means natural stop while length means MaxTokens hit
 	Index        int             `json:"index"`         // index in the list of choices
 	Message      ResponseMessage `json:"message"`
 	Logprobs     *string         `json:"logprobs"`
 }
 
 type ResponseMessage struct {
-	Role    string `json:"role"` // [assistant]; assistant means a previous GPT response; include it for interaction continuity
-	Content string `json:"content"`
+	Role      string     `json:"role"` // [assistant]; assistant means a previous GPT response; include it for interaction continuity
+	Content   string     `json:"content"`
+	ToolCalls []ToolCall `json:"tool_calls,omitempty"` // or GPT function call (request)
 }
+
+type ToolCall struct {
+	Function ToolCallFunction `json:"function"`
+	Type     string           `json:"type"`
+	ID       string           `json:"id"`
+}
+
+type ToolCallFunction struct {
+	Name      string `json:"name"`      // function to call, e.g. "get_temperature_at_location_in_celsius"
+	Arguments string `json:"arguments"` // arguments for the function as JSON, e.g. {"location": "Gdańsk"}
+}
+
 type Usage struct {
 	CompletionTokens int `json:"completion_tokens"`
 	PromptTokens     int `json:"prompt_tokens"`
@@ -85,6 +124,214 @@ func (e *GPTError) Error() string {
 	return e.Message
 }
 
+// ChatWithMemory keeps discussion history
+type ChatWithMemory struct {
+	apiKey       string
+	systemPrompt string
+	model        string
+	maxTokens    int
+	messages     []RequestMessage
+}
+
+func NewChatWithMemory(system, model string, maxTokens int) (*ChatWithMemory, error) {
+	// Get the API key from the environment variable
+	apiKey := os.Getenv("OPENAI_API_KEY")
+	if apiKey == "" {
+		return nil, errors.New("OpenAI API key is not set")
+	}
+
+	// first, attach system message if provided
+	messages := []RequestMessage{}
+	if system != "" {
+		systemTextContent := ContentItem{Type: "text", Text: system}
+		systemMessage := RequestMessage{Role: "system", Content: []ContentItem{systemTextContent}}
+		messages = append(messages, systemMessage)
+	}
+
+	return &ChatWithMemory{
+		apiKey:       apiKey,
+		systemPrompt: system,
+		model:        model,
+		maxTokens:    maxTokens,
+		messages:     messages,
+	}, nil
+}
+
+// For image param, use function: ImageFromBytes, ImageFromFile, ImageFromURL.
+// Example: User("describe what's on the picture", openai.ImageFromFile("./avocado.png"), nil, "text", 0.0)
+func (c *ChatWithMemory) User(userPrompt string, images []string, tools []Tool, responseFormat string, temperature float32) (*GPTResponse, error) {
+	// attach user messages, if provided
+	content := []ContentItem{}
+	if userPrompt != "" {
+		userTextContent := ContentItem{Type: "text", Text: userPrompt}
+		content = append(content, userTextContent)
+	}
+	for _, image := range images {
+		userImageContent := ContentItem{Type: "image_url", ImageURL: &ImageURL{URL: image}}
+		content = append(content, userImageContent)
+	}
+
+	newMessages := make([]RequestMessage, len(c.messages))
+	copy(newMessages, c.messages)
+	if len(content) > 0 {
+		userMessage := RequestMessage{Role: "user", Content: content}
+		newMessages = append(newMessages, userMessage)
+	}
+
+	toolChoice := ""
+	if len(tools) > 0 {
+		toolChoice = "auto"
+	}
+	reqBody := GPTRequest{
+		Model:          c.model,
+		ResponseFormat: &Format{Type: responseFormat},
+		NumAnswers:     1,
+		MaxTokens:      c.maxTokens,
+		Temperature:    temperature,
+		Messages:       newMessages,
+		Tools:          tools,
+		ToolChoice:     toolChoice,
+	}
+
+	reqBytes, err := json.Marshal(reqBody)
+	if err != nil {
+		return nil, errors.New(err.Error())
+	}
+
+	req, err := http.NewRequest("POST", chatCompletionsURL, bytes.NewReader(reqBytes))
+	if err != nil {
+		return nil, errors.New(err.Error())
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+c.apiKey)
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, errors.New(err.Error())
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, errors.New(err.Error())
+	}
+
+	var gptResp GPTResponse
+	if err := json.Unmarshal(body, &gptResp); err != nil {
+		return nil, errors.New(err.Error())
+	}
+	if gptResp.Error != nil {
+		return nil, errors.New(gptResp.Error.Error())
+	}
+	if len(gptResp.Choices) == 0 {
+		return nil, errors.New("llm returned 0 responses")
+	}
+
+	// include response in conversation history
+	for _, choice := range gptResp.Choices {
+		msg := RequestMessage{
+			Role:      choice.Message.Role,
+			Content:   []ContentItem{{Type: "text", Text: choice.Message.Content}},
+			ToolCalls: choice.Message.ToolCalls,
+		}
+		newMessages = append(newMessages, msg)
+	}
+	c.messages = newMessages
+	if Debug {
+		log.Printf("Usage: %+v", gptResp.Usage)
+	}
+	return &gptResp, nil
+}
+
+func (c *ChatWithMemory) ToolResponse(response string, toolCallID string) (*GPTResponse, error) {
+	newMessages := make([]RequestMessage, len(c.messages))
+	copy(newMessages, c.messages)
+	toolMessage := RequestMessage{Role: "tool", Content: []ContentItem{{Type: "text", Text: response}}, ToolCallID: toolCallID}
+	newMessages = append(newMessages, toolMessage)
+
+	reqBody := GPTRequest{
+		Model:      c.model,
+		NumAnswers: 1,
+		MaxTokens:  c.maxTokens,
+		Messages:   newMessages,
+	}
+
+	reqBytes, err := json.Marshal(reqBody)
+	if err != nil {
+		return nil, errors.New(err.Error())
+	}
+
+	req, err := http.NewRequest("POST", chatCompletionsURL, bytes.NewReader(reqBytes))
+	if err != nil {
+		return nil, errors.New(err.Error())
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+c.apiKey)
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, errors.New(err.Error())
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, errors.New(err.Error())
+	}
+
+	var gptResp GPTResponse
+	if err := json.Unmarshal(body, &gptResp); err != nil {
+		return nil, errors.New(err.Error())
+	}
+	if gptResp.Error != nil {
+		return nil, errors.New(gptResp.Error.Error())
+	}
+	if len(gptResp.Choices) == 0 {
+		return nil, errors.New("llm returned 0 responses")
+	}
+
+	// include response in conversation history
+	for _, choice := range gptResp.Choices {
+		msg := RequestMessage{
+			Role:      choice.Message.Role,
+			Content:   []ContentItem{{Type: "text", Text: choice.Message.Content}},
+			ToolCalls: choice.Message.ToolCalls,
+		}
+		newMessages = append(newMessages, msg)
+	}
+	c.messages = newMessages
+	if Debug {
+		log.Printf("Usage: %+v", gptResp.Usage)
+	}
+	return &gptResp, nil
+}
+
+func (c *ChatWithMemory) DumpConversation() string {
+	var conversationHistory string
+	for _, message := range c.messages {
+		for _, toolCall := range message.ToolCalls {
+			conversationHistory += fmt.Sprintf("%s: [Tool Call %s] %s with arguments %s\n", message.Role, toolCall.ID, toolCall.Function.Name, toolCall.Function.Arguments)
+		}
+
+		for _, contentItem := range message.Content {
+			// empty Text happens for reponse messages with toolCalls
+			if contentItem.Text == "" {
+				continue
+			}
+			if contentItem.Type == "text" {
+				conversationHistory += fmt.Sprintf("%s: %s\n", message.Role, contentItem.Text)
+			} else if contentItem.Type == "image_url" && contentItem.ImageURL != nil {
+				conversationHistory += fmt.Sprintf("%s: [Image] %s\n", message.Role, contentItem.ImageURL.URL)
+			}
+		}
+	}
+	return conversationHistory
+}
+
 // For image param, use function: ImageFromBytes, ImageFromFile, ImageFromURL.
 // Example: openai.CompletionCheap("describe what's on the picture", "Use max 3 words", openai.ImageFromFile("./avocado.png"))
 func CompletionCheap(user, system string, images []string) (string, error) {
@@ -100,7 +347,7 @@ func CompletionStrong(user, system string, images []string) (string, error) {
 // For image param, use function: ImageFromBytes, ImageFromFile, ImageFromURL.
 // Example: openai.Completion("describe what's on the picture", "Use max 3 words", openai.ImageFromFile("./avocado.png"), "gpt-4o-mini")
 func Completion(user, system string, images []string, model string) (string, error) {
-	gptResp, err := CompletionExpert(user, system, images, model, "text", 1000, 0.0)
+	gptResp, err := CompletionExpert(user, system, images, nil, model, "text", 1000, 0.0)
 	if err != nil {
 		return "", err
 	}
@@ -116,8 +363,8 @@ func Completion(user, system string, images []string, model string) (string, err
 
 // CompletionExpert generates chat completion, with image support.
 // For image param, use function: ImageFromBytes, ImageFromFile, ImageFromURL.
-// Example: openai.Completion("describe what's on the picture", "Use max 3 words", openai.ImageFromFile("./avocado.png"), "gpt-4o-mini", 256, 0.0)
-func CompletionExpert(user, system string, images []string, model, responseFormat string, maxTokens int, temperature float32) (*GPTResponse, error) {
+// Example: openai.Completion("describe what's on the picture", "Use max 3 words", openai.ImageFromFile("./avocado.png"), nil, "gpt-4o-mini", "text", 256, 0.0)
+func CompletionExpert(user, system string, images []string, tools []Tool, model, responseFormat string, maxTokens int, temperature float32) (*GPTResponse, error) {
 	apiKey := os.Getenv("OPENAI_API_KEY") // Get the API key from the environment variable
 	if apiKey == "" {
 		return nil, errors.New("OpenAI API key is not set")
@@ -155,6 +402,8 @@ func CompletionExpert(user, system string, images []string, model, responseForma
 		MaxTokens:      maxTokens,
 		Temperature:    temperature,
 		Messages:       messages,
+		Tools:          tools,
+		ToolChoice:     "auto",
 	}
 
 	reqBytes, err := json.Marshal(reqBody)
