@@ -1,0 +1,11 @@
+Otrzymasz notatkę z informacjami o osobach i miejscach. Przykładowa notatka:
+Rafał Bomba przez długi czas pracował jako laborant w Krakowie, współpracując blisko z profesorem Andrzejem Majem. Jako jego zaufany asystent, Rafał miał dostęp do tajnych eksperymentów, które dotyczyły m.in. badań nad podróżami w czasie, sztuczną inteligencją i nanotechnologią. Był ceniony za skrupulatność i oddanie, ale jego ambicje oraz ciekawość zaczęły go prowadzić na ścieżki, które wykraczały poza standardową naukę znaną w Warszawie.
+
+Twoim zadaniem jest wyodrębnić z notatki IMIONA osób oraz miejsca, i zwrócić w osobnych wierszach najpierw WSZYSTKIE imiona, następnie WSZYSTKIE miejsca. WAŹNE: zwróć osoby i miejsca w liczbie pojedynczej, w formie mianownika (pojęcie z języka polskiego), oddzielone spacjami. Przykład:
+<example>
+Rafał Andrzej
+Kraków Warszawa
+</example>
+
+Notatka:
+{{INPUT}}

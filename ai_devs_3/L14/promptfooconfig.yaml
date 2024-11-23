@@ -1,0 +1,29 @@
+# Learn more about building a configuration: https://promptfoo.dev/docs/configuration/guide
+description: "extract people and places"
+
+prompts:
+  - file://prompt.txt # can also read the prompt from a file
+
+providers:
+  - "openai:gpt-4o-mini"
+  # - "ollama:chat:llama3:8b" # first you need to run in terminal: ollama run llama3:8b
+  
+
+# Set up individual test cases
+tests:
+  - vars:
+      INPUT: |
+        Podczas pobytu w Warszawie, w instytucie profesora doszło do incydentu, w wyniku którego, jeden z laborantów - Rafał Bomba - zaginął. Niepotwierdzone źródła informacji podają jednak, że Rafał spędził około 2 lata, wynajmując pokój w pewnym hotelu. Dlaczego zniknął?  Przed kim się ukrywał? Z kim kontaktował się przez ten czas i dlaczego ujawnił się po tym czasie? Na te pytania nie znamy odpowiedzi, ale agenci starają się uzupełnić brakujące informacje.
+        W okolicach 2021 roku Ragowski udał się do Warszawy celem spotkania z profesorem Andrzejem Majem. Prawdopodobnie nie zabrał ze sobą żony, a cel ich spotkania nie jest do końca jasny.
+    assert:
+      - type: contains-all
+        value: 
+          - Rafał
+          - Andrzej
+          - Warszawa
+      - type: not-contains-any
+        value: 
+          - Bomba
+          - Maj
+          - ,
+ 

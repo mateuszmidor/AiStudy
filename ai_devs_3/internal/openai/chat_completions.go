@@ -432,6 +432,10 @@ func CompletionExpert(user, system string, images []string, tools []Tool, model,
 		messages = append(messages, userMessage)
 	}
 
+	toolChoice := ""
+	if len(tools) > 0 {
+		toolChoice = "auto"
+	}
 	reqBody := GPTRequest{
 		Model:          model,
 		ResponseFormat: &Format{Type: responseFormat},
@@ -440,7 +444,7 @@ func CompletionExpert(user, system string, images []string, tools []Tool, model,
 		Temperature:    temperature,
 		Messages:       messages,
 		Tools:          tools,
-		ToolChoice:     "auto",
+		ToolChoice:     toolChoice,
 	}
 
 	reqBytes, err := json.Marshal(reqBody)
