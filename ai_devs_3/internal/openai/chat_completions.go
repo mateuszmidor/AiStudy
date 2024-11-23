@@ -160,24 +160,26 @@ func NewChatWithMemory(system, model string, maxTokens int, debug bool) (*ChatWi
 
 	return chat, nil
 }
+
+// pushMessage adds msg to conversation history
 func (c *ChatWithMemory) pushMessage(msg RequestMessage) {
 	if c.debug {
+		fmt.Printf("%d.\n", len(c.messages))
 		fmt.Println(FormatMessage(msg))
 	}
 
-	// "tool" request
+	// "tool" message is a special case; response must immediately follow the request
 	if msg.Role == "tool" {
-		// "tool" response must immediately follow "tool" request
 		for i, message := range c.messages {
 			if message.ToolCallID == msg.ToolCallID {
-				log.Println("znaleziono tool request na pozycji:", i)
+				fmt.Println("### znaleziono tool request na pozycji:", i)
 				c.messages = append(c.messages[:i+1], append([]RequestMessage{msg}, c.messages[i+1:]...)...)
 				break
 			}
 		}
 	}
 
-	// regular message
+	// regular message, just add at the end of the list
 	c.messages = append(c.messages, msg)
 }
 
