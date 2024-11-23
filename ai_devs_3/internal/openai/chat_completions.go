@@ -131,30 +131,54 @@ type ChatWithMemory struct {
 	model        string
 	maxTokens    int
 	messages     []RequestMessage
+	debug        bool
 }
 
-func NewChatWithMemory(system, model string, maxTokens int) (*ChatWithMemory, error) {
+func NewChatWithMemory(system, model string, maxTokens int, debug bool) (*ChatWithMemory, error) {
+
 	// Get the API key from the environment variable
 	apiKey := os.Getenv("OPENAI_API_KEY")
 	if apiKey == "" {
 		return nil, errors.New("OpenAI API key is not set")
 	}
 
-	// first, attach system message if provided
-	messages := []RequestMessage{}
-	if system != "" {
-		systemTextContent := ContentItem{Type: "text", Text: system}
-		systemMessage := RequestMessage{Role: "system", Content: []ContentItem{systemTextContent}}
-		messages = append(messages, systemMessage)
-	}
-
-	return &ChatWithMemory{
+	chat := &ChatWithMemory{
 		apiKey:       apiKey,
 		systemPrompt: system,
 		model:        model,
 		maxTokens:    maxTokens,
-		messages:     messages,
-	}, nil
+		messages:     []RequestMessage{},
+		debug:        debug,
+	}
+
+	// first, attach system message if provided
+	if system != "" {
+		systemTextContent := ContentItem{Type: "text", Text: system}
+		systemMessage := RequestMessage{Role: "system", Content: []ContentItem{systemTextContent}}
+		chat.pushMessage(systemMessage)
+	}
+
+	return chat, nil
+}
+func (c *ChatWithMemory) pushMessage(msg RequestMessage) {
+	if c.debug {
+		fmt.Println(FormatMessage(msg))
+	}
+
+	// "tool" request
+	if msg.Role == "tool" {
+		// "tool" response must immediately follow "tool" request
+		for i, message := range c.messages {
+			if message.ToolCallID == msg.ToolCallID {
+				log.Println("znaleziono tool request na pozycji:", i)
+				c.messages = append(c.messages[:i+1], append([]RequestMessage{msg}, c.messages[i+1:]...)...)
+				break
+			}
+		}
+	}
+
+	// regular message
+	c.messages = append(c.messages, msg)
 }
 
 // For image param, use function: ImageFromBytes, ImageFromFile, ImageFromURL.
@@ -171,11 +195,12 @@ func (c *ChatWithMemory) User(userPrompt string, images []string, tools []Tool, 
 		content = append(content, userImageContent)
 	}
 
-	newMessages := make([]RequestMessage, len(c.messages))
-	copy(newMessages, c.messages)
+	// newMessages := make([]RequestMessage, len(c.messages))
+	// copy(newMessages, c.messages)
 	if len(content) > 0 {
 		userMessage := RequestMessage{Role: "user", Content: content}
-		newMessages = append(newMessages, userMessage)
+		// newMessages = append(newMessages, userMessage)
+		c.pushMessage(userMessage)
 	}
 
 	toolChoice := ""
@@ -188,7 +213,7 @@ func (c *ChatWithMemory) User(userPrompt string, images []string, tools []Tool, 
 		NumAnswers:     1,
 		MaxTokens:      c.maxTokens,
 		Temperature:    temperature,
-		Messages:       newMessages,
+		Messages:       c.messages,
 		Tools:          tools,
 		ToolChoice:     toolChoice,
 	}
@@ -231,14 +256,15 @@ func (c *ChatWithMemory) User(userPrompt string, images []string, tools []Tool, 
 
 	// include response in conversation history
 	for _, choice := range gptResp.Choices {
-		msg := RequestMessage{
+		assistantMsg := RequestMessage{
 			Role:      choice.Message.Role,
 			Content:   []ContentItem{{Type: "text", Text: choice.Message.Content}},
 			ToolCalls: choice.Message.ToolCalls,
 		}
-		newMessages = append(newMessages, msg)
+		// newMessages = append(newMessages, msg)
+		c.pushMessage(assistantMsg)
 	}
-	c.messages = newMessages
+	// c.messages = newMessages
 	if Debug {
 		log.Printf("Usage: %+v", gptResp.Usage)
 	}
@@ -246,16 +272,17 @@ func (c *ChatWithMemory) User(userPrompt string, images []string, tools []Tool, 
 }
 
 func (c *ChatWithMemory) ToolResponse(response string, toolCallID string) (*GPTResponse, error) {
-	newMessages := make([]RequestMessage, len(c.messages))
-	copy(newMessages, c.messages)
+	// newMessages := make([]RequestMessage, len(c.messages))
+	// copy(newMessages, c.messages)
 	toolMessage := RequestMessage{Role: "tool", Content: []ContentItem{{Type: "text", Text: response}}, ToolCallID: toolCallID}
-	newMessages = append(newMessages, toolMessage)
+	// newMessages = append(newMessages, toolMessage)
+	c.pushMessage(toolMessage)
 
 	reqBody := GPTRequest{
 		Model:      c.model,
 		NumAnswers: 1,
 		MaxTokens:  c.maxTokens,
-		Messages:   newMessages,
+		Messages:   c.messages,
 	}
 
 	reqBytes, err := json.Marshal(reqBody)
@@ -301,9 +328,10 @@ func (c *ChatWithMemory) ToolResponse(response string, toolCallID string) (*GPTR
 			Content:   []ContentItem{{Type: "text", Text: choice.Message.Content}},
 			ToolCalls: choice.Message.ToolCalls,
 		}
-		newMessages = append(newMessages, msg)
+		// newMessages = append(newMessages, msg)
+		c.pushMessage(msg)
 	}
-	c.messages = newMessages
+	// c.messages = newMessages
 	if Debug {
 		log.Printf("Usage: %+v", gptResp.Usage)
 	}
@@ -314,23 +342,29 @@ func (c *ChatWithMemory) DumpConversation() string {
 	var conversationHistory string
 	for i, message := range c.messages {
 		conversationHistory += fmt.Sprintf("%d.\n", i)
-		for _, toolCall := range message.ToolCalls {
-			conversationHistory += fmt.Sprintf("%s: [Tool Call %s] %s with arguments %s\n", message.Role, toolCall.ID, toolCall.Function.Name, toolCall.Function.Arguments)
-		}
-
-		for _, contentItem := range message.Content {
-			// empty Text happens for reponse messages with toolCalls
-			if contentItem.Text == "" {
-				continue
-			}
-			if contentItem.Type == "text" {
-				conversationHistory += fmt.Sprintf("%s: %s\n", message.Role, contentItem.Text)
-			} else if contentItem.Type == "image_url" && contentItem.ImageURL != nil {
-				conversationHistory += fmt.Sprintf("%s: [Image] %s\n", message.Role, contentItem.ImageURL.URL)
-			}
-		}
+		conversationHistory += FormatMessage(message)
 	}
 	return conversationHistory
+}
+
+func FormatMessage(message RequestMessage) string {
+	messageStr := ""
+
+	for _, toolCall := range message.ToolCalls {
+		messageStr += fmt.Sprintf("%s: [Tool Call %s] %s with arguments %s\n", message.Role, toolCall.ID, toolCall.Function.Name, toolCall.Function.Arguments)
+	}
+
+	for _, contentItem := range message.Content {
+		if contentItem.Text == "" {
+			continue
+		}
+		if contentItem.Type == "text" {
+			messageStr += fmt.Sprintf("%s: %s\n", message.Role, contentItem.Text)
+		} else if contentItem.Type == "image_url" && contentItem.ImageURL != nil {
+			messageStr += fmt.Sprintf("%s: [Image] %s\n", message.Role, contentItem.ImageURL.URL)
+		}
+	}
+	return messageStr
 }
 
 // For image param, use function: ImageFromBytes, ImageFromFile, ImageFromURL.

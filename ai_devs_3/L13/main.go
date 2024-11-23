@@ -118,49 +118,52 @@ func getArgs(argsJSON string) map[string]string {
 }
 
 func main() {
-	// askAPI("show tables")
-	// askAPI("select * from datacenters")
-	// askAPI("show create table datacenters")
+	const system = "Zaplanuj rozwiązanie zadania krok po kroku, następnie rozwiąz zadanie korzystając z dostępnych narzędzi. Napisz [FINISHED] gdy skończysz."
+	const user = "które aktywne datacenter (DC_ID) są zarządzane przez pracowników, którzy są na urlopie (is_active=0)"
+	const debug = true
 
 	tools := prepareTools()
-	chat, err := openai.NewChatWithMemory("Solve the task using available tools. Reply with [FINISHED] when the task is solved", "gpt-4o-mini", 1000)
+	chat, err := openai.NewChatWithMemory(system, "gpt-4o-mini", 1000, debug)
 	if err != nil {
 		log.Fatalf("%+v", err)
 	}
-	rsp, err := chat.User("które aktywne datacenter (DC_ID) są zarządzane przez pracowników, którzy są na urlopie (is_active=0)", nil, tools, "text", 0)
-	// rsp, err := chat.User("create sql statement that returns active people from the relevant table. Use tools to check table structure", nil, tools, "text", 0)
+	rsp, err := chat.User(user, nil, tools, "text", 0)
 	if err != nil {
 		log.Fatalf("%+v", err)
 	}
 
+	// repeat until [FINISHED]
+FINISHED:
 	for {
 		for _, choice := range rsp.Choices {
 			if choice.Message.Content != "" {
-				fmt.Println(choice.Message.Role, ":", choice.Message.Content)
-
+				if strings.Contains(choice.Message.Content, "FINISHED") {
+					break FINISHED
+				}
 			}
 
-			for _, toolCal := range choice.Message.ToolCalls {
-				name := toolCal.Function.Name
-				args := getArgs(toolCal.Function.Arguments)
-				callID := toolCal.ID
-				fmt.Println("Tool", name, args, callID)
-				result := ""
+			for _, toolCall := range choice.Message.ToolCalls {
+				name := toolCall.Function.Name
+				args := getArgs(toolCall.Function.Arguments)
+				callID := toolCall.ID
+				toolResponse := ""
 				switch name {
 				case "exec_sql_statement":
-					result = askAPI(args["sql_statement"])
+					toolResponse = askAPI(args["sql_statement"])
 				case "get_sql_db_table_schema":
-					result = askAPI("show create table " + args["table_name"])
+					toolResponse = askAPI("show create table " + args["table_name"])
 				case "show_sql_db_tables":
-					result = askAPI("show tables")
+					toolResponse = askAPI("show tables")
 				default:
 					log.Fatal("unknown function: " + name)
 				}
-				rsp, err = chat.ToolResponse(result, callID)
+				rsp, err = chat.ToolResponse(toolResponse, callID)
 				if err != nil {
 					log.Fatalf("%+v", err)
 				}
-				fmt.Println(rsp.Choices[0].Message.Content)
+				if strings.Contains(rsp.Choices[0].Message.Content, "FINISHED") {
+					break FINISHED
+				}
 			}
 		}
 
@@ -170,19 +173,12 @@ func main() {
 		if err != nil {
 			log.Fatalf("%+v", err)
 		}
-		if strings.Contains(rsp.Choices[0].Message.Content, "FINISHED") {
-			break
-		}
-		time.Sleep(time.Second)
+		time.Sleep(time.Second) // protect from infinite loop of llm requests :)
 	}
 	rsp, err = chat.User("zdobyte DC_ID zwróć w postaci listy i nic poza listą nie zwracaj, przykład:[123,456]", nil, tools, "text", 0)
 	if err != nil {
 		log.Fatalf("%+v", err)
 	}
-
-	fmt.Println()
-	fmt.Println("Conversation:")
-	fmt.Println(chat.DumpConversation())
 
 	// Verify answer
 	answerJSON := rsp.Choices[0].Message.Content
