@@ -156,61 +156,44 @@ func main() {
 	err := api.DownloadIfDoesntExistYet(barbaraURL, "downloads/barbara.txt")
 	api.FatalOnError(err)
 
-	newPeople, newPlaces := extractPeopleAndPlaces("downloads/barbara.txt")
-	allPeople := []string{}
-	allPlaces := []string{}
+	// collect people and places we managed to discover
+	knownPeople := map[string]bool{}
+	knownPlaces := map[string]bool{}
 
-	known := map[string]bool{} // we dont want to ask for the known people/places twice
-	for _, person := range newPeople {
-		known[person] = true
-	}
-	for _, place := range newPlaces {
-		known[place] = true
-	}
+	// get the initial people and places to process
+	peopleToProcess, placesToProcess := extractPeopleAndPlaces("downloads/barbara.txt")
 
-	for len(newPeople) > 0 || len(newPlaces) > 0 {
+	// take turns and ask for places related to person and for people related to place until there is anything not processed yet
+	for len(peopleToProcess) > 0 || len(placesToProcess) > 0 {
 		// get new places from people
-		fmt.Println("newPeople:", newPeople)
-		for _, p := range newPeople {
-			// 1. add person to allPeople
-			allPeople = append(allPeople, p)
-
-			// 2. ask for places
+		for _, p := range peopleToProcess {
+			// 1. ask for places
 			places := askAPI(peopleURL, p)
 
-			// 3. filter out known places
-			uniquePlaces := getUniqueItems(places, known)
+			// 2. filter out known places and add new places to known place
+			newPlaces := getUniqueItems(places, knownPlaces)
 
-			// 4. add unique places to new places for processing
-			newPlaces = append(newPlaces, uniquePlaces...)
+			// 3. add unique places to new places for processing
+			placesToProcess = append(placesToProcess, newPlaces...)
 		}
-		// all newPeople processed
-		newPeople = nil
+		peopleToProcess = nil // all peopleToProcess processed
 
 		// get new people from places
-		fmt.Println("newPlaces:", newPlaces)
-		for _, p := range newPlaces {
-			// 1. add place to allPlaces
-			allPlaces = append(allPlaces, p)
-
-			// 2. ask for people
+		for _, p := range placesToProcess {
+			// 1. ask for people
 			people := askAPI(placesURL, p)
 
-			// 3. filter out known people
-			uniquePeople := getUniqueItems(people, known)
+			// 2. filter out known people and add new people to known people
+			newPeople := getUniqueItems(people, knownPeople)
 
-			// 4. add unique people to new people for processing
-			newPeople = append(newPeople, uniquePeople...)
+			// 3. add unique people to new people for processing
+			peopleToProcess = append(peopleToProcess, newPeople...)
 		}
-		// all newPlaces processed
-		newPlaces = nil
+		placesToProcess = nil // all placesToProcess processed
 	}
 
-	fmt.Println("allPeople:", allPeople)
-	fmt.Println("allPlaces:", allPlaces)
-
 	// Verify answer
-	for _, p := range allPlaces {
+	for p := range knownPlaces {
 		fmt.Print("checking ", p, "...")
 		answer := p
 		result, err := api.VerifyTaskAnswer("loop", answer, api.VerificationURL)
@@ -218,8 +201,6 @@ func main() {
 			fmt.Println("Answer verification failed:", err)
 		} else {
 			fmt.Println(result)
-			// break
 		}
 	}
-
 }
