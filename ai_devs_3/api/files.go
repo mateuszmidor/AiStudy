@@ -1,6 +1,7 @@
 package api
 
 import (
+	"archive/zip"
 	"io"
 	"net/http"
 	"os"
@@ -46,6 +47,56 @@ func DownloadIfDoesntExistYet(url, destinationFilePath string) error {
 	_, err = io.Copy(destFile, resp.Body)
 	if err != nil {
 		return errors.Wrap(err, "failed to write to destination file")
+	}
+
+	return nil
+}
+
+func UnzipArchive(sourceFilePath, destinationDir string) error {
+	// Open the ZIP file
+	zipReader, err := zip.OpenReader(sourceFilePath)
+	if err != nil {
+		return errors.Wrap(err, "failed to open zip file")
+	}
+	defer zipReader.Close()
+
+	// Extract the files from the ZIP archive
+	for _, file := range zipReader.File {
+		filePath := filepath.Join(destinationDir, file.Name)
+
+		if file.FileInfo().IsDir() {
+			// Create directories if necessary
+			err = os.MkdirAll(filePath, os.ModePerm)
+			if err != nil {
+				return errors.Wrap(err, "failed to create directory")
+			}
+			continue
+		}
+
+		// Create the file
+		destFile, err := os.OpenFile(filePath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, file.Mode())
+		if err != nil {
+			return errors.Wrap(err, "failed to create file")
+		}
+
+		// Open the file inside the ZIP archive
+		zipFile, err := file.Open()
+		if err != nil {
+			destFile.Close()
+			return errors.Wrap(err, "failed to open file in zip")
+		}
+
+		// Copy the file content
+		_, err = io.Copy(destFile, zipFile)
+		if err != nil {
+			zipFile.Close()
+			destFile.Close()
+			return errors.Wrap(err, "failed to copy file content")
+		}
+
+		// Close the files
+		zipFile.Close()
+		destFile.Close()
 	}
 
 	return nil
