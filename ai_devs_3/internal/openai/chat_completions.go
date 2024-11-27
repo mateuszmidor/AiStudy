@@ -107,6 +107,11 @@ type ToolCallFunction struct {
 	Arguments string `json:"arguments"` // arguments for the function as JSON, e.g. {"location": "Gdańsk"}
 }
 
+type ToolCallResponse struct {
+	Text       string
+	ToolCallID string
+}
+
 type Usage struct {
 	CompletionTokens int `json:"completion_tokens"`
 	PromptTokens     int `json:"prompt_tokens"`
@@ -171,10 +176,11 @@ func (c *ChatWithMemory) pushMessage(msg RequestMessage) {
 	// "tool" message is a special case; response must immediately follow the request
 	if msg.Role == "tool" {
 		for i, message := range c.messages {
-			if message.ToolCallID == msg.ToolCallID {
-				fmt.Println("### znaleziono tool request na pozycji:", i)
-				c.messages = append(c.messages[:i+1], append([]RequestMessage{msg}, c.messages[i+1:]...)...)
-				break
+			for _, toolCall := range message.ToolCalls {
+				if toolCall.ID == msg.ToolCallID {
+					c.messages = append(c.messages[:i+1], append([]RequestMessage{msg}, c.messages[i+1:]...)...)
+					return
+				}
 			}
 		}
 	}
@@ -273,12 +279,27 @@ func (c *ChatWithMemory) User(userPrompt string, images []string, tools []Tool, 
 	return &gptResp, nil
 }
 
-func (c *ChatWithMemory) ToolResponse(response string, toolCallID string) (*GPTResponse, error) {
+// ToolResponse MUST produce "tool" messages responding to each 'tool_call_id' from preceding assistant message with 'tool_calls'
+func (c *ChatWithMemory) ToolResponse(items []ToolCallResponse) (*GPTResponse, error) {
 	// newMessages := make([]RequestMessage, len(c.messages))
 	// copy(newMessages, c.messages)
-	toolMessage := RequestMessage{Role: "tool", Content: []ContentItem{{Type: "text", Text: response}}, ToolCallID: toolCallID}
-	// newMessages = append(newMessages, toolMessage)
-	c.pushMessage(toolMessage)
+	for _, response := range items {
+		content := []ContentItem{}
+		if response.Text != "" {
+			textContent := ContentItem{Type: "text", Text: response.Text}
+			content = append(content, textContent)
+		}
+		// gpt-4o-mini doesnt support responding with images?
+		// "Invalid chat format. Expected 'text' field in text type content part to be a string."
+		// if image != "" {
+		// 	imageContent := ContentItem{Type: "image_url", ImageURL: &ImageURL{URL: image}}
+		// 	content = append(content, imageContent)
+		// }
+		toolMessage := RequestMessage{Role: "tool", Content: content, ToolCallID: response.ToolCallID}
+
+		// newMessages = append(newMessages, toolMessage)
+		c.pushMessage(toolMessage) // assistant message with 'tool_calls' must be followed by tool messages responding to each 'tool_call_id'
+	}
 
 	reqBody := GPTRequest{
 		Model:      c.model,
