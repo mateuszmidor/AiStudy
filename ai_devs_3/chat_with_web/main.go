@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"log"
 	"os"
@@ -32,8 +33,21 @@ func removeLinks(md string) string {
 	return strings.Join(filteredLines, "\n")
 }
 
-func main() {
-	url, question := getURLAndQuestionFromCmdLineArgs()
+func articleToMarkDown(url string) string {
+	// extract filename from url
+	parts := strings.Split(url, "/")
+	filename := parts[len(parts)-1] + ".md"
+
+	// check if file exists in "downloads" directory
+	filePath := "downloads/" + filename
+	if _, err := os.Stat(filePath); err == nil {
+		// file exists, return its contents
+		content, err := os.ReadFile(filePath)
+		if err != nil {
+			log.Fatalf("failed to read file %s: %+v", filePath, err)
+		}
+		return string(content)
+	}
 
 	// fetch the article
 	articleHTML, err := api.FetchData(url)
@@ -49,28 +63,55 @@ func main() {
 
 	declutteredArticleMD := declutteredArticleMD(articleMD)
 
+	if _, err := os.Stat("downloads"); os.IsNotExist(err) {
+		err := os.Mkdir("downloads", os.ModePerm)
+		if err != nil {
+			log.Fatalf("failed to create downloads directory: %+v", err)
+		}
+	}
 	// save the MarkDown article for optional investigation
-	err = os.WriteFile("article.md", []byte(declutteredArticleMD), os.ModePerm)
+	err = os.WriteFile("downloads/"+filename, []byte(declutteredArticleMD), os.ModePerm)
 	if err != nil {
 		log.Fatalf("failed to save article to file article.md: %+v", err)
 	}
+	log.Println("saved page as:", filename)
 
-	// answer the question
-	system := "When answering the question, use only the information you can find in the Input Document. ONLY that information is allowed!"
-	user := "Question: " + question + "\nInput Document:\n" + declutteredArticleMD
-	openai.Debug = true
-	answer, err := openai.CompletionCheap(user, system, nil)
+	return declutteredArticleMD
+}
+
+func getQuestion() string {
+	reader := bufio.NewReader(os.Stdin)
+	line, err := reader.ReadString('\n')
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println(answer)
+	return strings.TrimSpace(line)
 }
 
-func getURLAndQuestionFromCmdLineArgs() (string, string) {
-	if len(os.Args) < 3 {
-		log.Fatal("you need to provide input URL and a question")
+func main() {
+	url := getURLFromCmdLineArgs()
+	declutteredArticleMD := articleToMarkDown(url)
+
+	// question-answer loop
+	for {
+		fmt.Print("> ")
+		question := getQuestion()
+		system := "When answering the question, use only the information you can find in the Input Document. ONLY that information is allowed!"
+		user := "Question: " + question + "\nInput Document:\n" + declutteredArticleMD
+		openai.Debug = true
+		answer, err := openai.CompletionCheap(user, system, nil)
+		if err != nil {
+			log.Fatal(err)
+		}
+		fmt.Println(answer)
+		fmt.Println()
+	}
+}
+
+func getURLFromCmdLineArgs() string {
+	if len(os.Args) < 2 {
+		log.Fatal("you need to provide input URL")
 	}
 	url := os.Args[1]
-	question := os.Args[2]
-	return url, question
+	return url
 }
