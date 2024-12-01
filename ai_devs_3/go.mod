@@ -1,10 +1,11 @@
 module github.com/mateuszmidor/AiStudy/ai_devs_3
 
 go 1.21.1
+// go 1.22.1
 
 
 require (
-	github.com/JohannesKaufmann/html-to-markdown/v2 v2.1.0
+	// github.com/JohannesKaufmann/html-to-markdown/v2 v2.1.0
 	github.com/gocolly/colly v1.2.0
 	github.com/henomis/langfuse-go v0.0.3
 	github.com/joho/godotenv v1.5.1
@@ -38,3 +39,5 @@ require (
 	github.com/henomis/restclientgo v1.2.0 // indirect
 	golang.org/x/net v0.30.0 // indirect
 )
+
+// require github.com/JohannesKaufmann/dom v0.1.1-0.20240706125338-ff9f3b772364 // indirect
