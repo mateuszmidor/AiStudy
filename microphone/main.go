@@ -21,13 +21,13 @@ func main() {
 
 	err := microphone.Init()
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("microphone init failed: %+v", err)
 	}
 	defer microphone.Terminate()
 
 	stream, format, err := microphone.OpenDefaultStream(44100, 1)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("microphone OpenDefaultStream failed: %+v ", err)
 	}
 	// Close the stream at the end if it hasn't already been
 	// closed explicitly.
