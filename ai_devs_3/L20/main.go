@@ -17,23 +17,38 @@ import (
 )
 
 const system = `
-# Zadanie
-w oparciu o dostarczony Notatnik Rafała, odpowiedz na pytanie. Notatnik jest pisany zdawkowo i niedbale, odpowiedzi na pytanie trzeba starannie poszukać.
-Odpowiadaj maksymalnie zwięźle i krótko, to wazne! 
-
-# Przykład
-	pytanie - w którym roku toczy wydarzenie miało miejsce?
-	odpowiedź - 2123
-
-# Notatnik Rafała
+# Kontekst:
+Otrzymasz tekst źródłowy na podstawie którego odpowiesz na pytanie uzytkownika.
+Tekst źródłowy ma postać osobistego notatnika Rafała - jest on napisany w sposób nieuporządkownay, wyrywkowo i niedbale, Rafał opisuje w nim swoje przemyślenia
+i wspomina wydarzenia z ostatnich lat.
+# Zadanie:
+Odpowiedz JEDNYM SŁOWEM na pytanie uzytkownika w formacie JSON z polami "_thinking", "wrong_answers" oraz "answer", gdzie pole "_thinking" występuje jako pierwsze.
+Zacznij od zgromadzenia wszystkich informacji, które mogą być pomocne by odpowiedzieć na pytanie, i umieść je w polu "_thinking", nie pomijaj niczego!
+Następnie na podstawie zgromadzonych informacji wydedukuj najbardziej prawdopodobną odpowiedź i umieść ją w polu "answer".
+Jeśli uzytkownik powie, ze odpowiedź jest błędna, zapamiętaj ją w polu "wrong_answers", tak zeby nie podać błędnej odpowiedzi przy kolejnej próbie.
+# Przykład:
+pytanie: w którym roku Rafał spotkał Andrzeja?
+odpowiedź: 
+{
+"_thinking":"w notatniku Rafał wspomina, ze odwiedził Walencję w 2015 roku i ze było to 6 lat wcześniej, niz poznał Andrzeja",
+"wrong_answers":["2024","2023","2022"],
+"anwer":"2021"
+}
+Pamiętaj - odpowiadaj jednym słowem.
+# Notatnik Rafała:
 `
+
+type Answer struct {
+	Thinking     string   `json:"_thinking"`
+	WrongAnswers []string `json:"wrong_answers"`
+	Answer       string   `json:"answer"`
+}
 
 func main() {
 	_, err := readOrDescribeImages("downloads/")
 	if err != nil {
 		log.Fatalf("%+v", err)
 	}
-	// fmt.Println(filenames)
 	doc := composeDocumentFromFragments("downloads/")
 
 	url := "https://centrala.ag3nts.org/data/" + api.ApiKey() + "/notes.json"
@@ -47,31 +62,69 @@ func main() {
 		log.Fatal("Error deserializing questions JSON:", err)
 	}
 
-	answers := map[string]string{}
-	for id, question := range questions {
-		user := question
-		rsp, err := openai.CompletionCheap(user, system+doc, nil)
+	// fill answers with keys so API responds with wrong answer ID so we know we must find another answer
+	answers := make(map[string]string, len(questions))
+	for id := range questions {
+		answers[id] = ""
+	}
+
+	// Assign sorted keys from questions - so we answer questions 1,2,3,4,5 and get feedback from API
+	ids := make([]string, 0, len(questions))
+	for id := range questions {
+		ids = append(ids, id)
+	}
+	sort.Strings(ids)
+
+	for _, id := range ids {
+		// get question
+		user := questions[id]
+
+		// try answer the question
+		chat, err := openai.NewChatWithMemory(system+doc, "gpt-4o-mini", 1000, true)
 		if err != nil {
 			log.Fatal(err)
 		}
-		answers[id] = rsp
-	}
+		rsp, err := chat.User(user, nil, nil, "json_object", 0)
+		if err != nil {
+			log.Fatal(err)
+		}
 
+		// repeat until we get correct answer for this question
+		for {
+			fmt.Println("Press 'Enter' to continue...")
+			fmt.Scanln()
+
+			// verify answer
+			var answer Answer
+			err = json.Unmarshal([]byte(rsp.Choices[0].Message.Content), &answer)
+			if err != nil {
+				log.Fatal("Error deserializing response content:", err)
+			}
+			answers[id] = answer.Answer
+			result, err := api.VerifyTaskAnswer("notes", answers, api.VerificationURL)
+			if err != nil {
+				if strings.Contains(err.Error(), id+" is incorrect") {
+					// wrong answer, try again
+					rsp, err = chat.User("Błędna odpowiedź. Zastanów się chwilę i podaj poprawną odpowiedź. NIE PODAWAJ TEJ SAMEJ BŁĘDNEJ ODPOWIEDZI PONOWNIE!", nil, nil, "json_object", 0) // feedback error to the chat to try again
+					if err != nil {
+						log.Fatal(err)
+					}
+				} else {
+					// good answer! move on to he next question
+					break
+				}
+			} else {
+				// victory
+				fmt.Println(result)
+				return
+			}
+		}
+	}
 	// answers["01"] = "2019"
 	// answers["02"] = "Adam"
 	// answers["03"] = "Jaskinia"
 	// answers["04"] = "2024-11-12"
 	// answers["05"] = "Lubawa"
-
-	for id, answer := range answers {
-		fmt.Printf("%s: %s - %s\n", id, questions[id], answer)
-	}
-	result, err := api.VerifyTaskAnswer("notes", answers, api.VerificationURL)
-	if err != nil {
-		fmt.Println("Answer verification failed:", err)
-		return
-	}
-	fmt.Println(result)
 }
 
 // readOrDescribeImages returns key-value pairs: {filename: description} for all .png files found under sourceDir
@@ -148,13 +201,16 @@ func composeDocumentFromFragments(sourceDir string) string {
 	var documentBuilder strings.Builder
 
 	// Read and append the content of each file to the document
-	for _, fragment := range fragments {
+	for i, fragment := range fragments {
 		content, err := os.ReadFile(filepath.Join(sourceDir, fragment))
 		if err != nil {
 			log.Printf("failed to read file %s: %+v\n", fragment, err)
 			continue
 		}
-		documentBuilder.Write(content)
+		contentWithoutEmptyLinest := strings.ReplaceAll(string(content), "\n\n", "\n")
+		documentBuilder.WriteString(fmt.Sprintf("Notatnik - strona %d\n", i+1))
+		documentBuilder.WriteString(contentWithoutEmptyLinest)
+		documentBuilder.WriteString("\n") // Add a newline between fragments
 		documentBuilder.WriteString("\n") // Add a newline between fragments
 	}
 
