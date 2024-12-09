@@ -45,86 +45,107 @@ type Answer struct {
 }
 
 func main() {
-	_, err := readOrDescribeImages("downloads/")
-	if err != nil {
+	if err := processImagesAndQuestions("downloads/"); err != nil {
 		log.Fatalf("%+v", err)
 	}
-	doc := composeDocumentFromFragments("downloads/")
+}
 
+func processImagesAndQuestions(sourceDir string) error {
+	_, err := readOrDescribeImages(sourceDir)
+	if err != nil {
+		return err
+	}
+
+	doc := composeDocumentFromFragments(sourceDir)
+	questions, err := fetchQuestions()
+	if err != nil {
+		return err
+	}
+
+	answers := initializeAnswers(questions)
+	ids := sortedQuestionIDs(questions)
+
+	for _, id := range ids {
+		if err := processQuestion(id, questions[id], doc, answers); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func fetchQuestions() (map[string]string, error) {
 	url := "https://centrala.ag3nts.org/data/" + api.ApiKey() + "/notes.json"
 	questionsJSON, err := api.FetchData(url)
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
+
 	questions := map[string]string{}
 	err = json.Unmarshal([]byte(questionsJSON), &questions)
 	if err != nil {
-		log.Fatal("Error deserializing questions JSON:", err)
+		return nil, errors.Wrap(err, "Error deserializing questions JSON")
 	}
 
-	// fill answers with keys so API responds with wrong answer ID so we know we must find another answer
+	return questions, nil
+}
+
+func initializeAnswers(questions map[string]string) map[string]string {
 	answers := make(map[string]string, len(questions))
 	for id := range questions {
 		answers[id] = ""
 	}
+	return answers
+}
 
-	// Assign sorted keys from questions - so we answer questions 1,2,3,4,5 and get feedback from API
+func sortedQuestionIDs(questions map[string]string) []string {
 	ids := make([]string, 0, len(questions))
 	for id := range questions {
 		ids = append(ids, id)
 	}
 	sort.Strings(ids)
+	return ids
+}
 
-	for _, id := range ids {
-		// get question
-		user := questions[id]
+func processQuestion(id, user, doc string, answers map[string]string) error {
+	chat, err := openai.NewChatWithMemory(system+doc, "gpt-4o-mini", 1000, true)
+	if err != nil {
+		return err
+	}
 
-		// try answer the question
-		chat, err := openai.NewChatWithMemory(system+doc, "gpt-4o-mini", 1000, true)
+	rsp, err := chat.User(user, nil, nil, "json_object", 0)
+	if err != nil {
+		return err
+	}
+
+	for {
+		fmt.Println("Press 'Enter' to continue...")
+		fmt.Scanln()
+
+		var answer Answer
+		err = json.Unmarshal([]byte(rsp.Choices[0].Message.Content), &answer)
 		if err != nil {
-			log.Fatal(err)
+			return errors.Wrap(err, "Error deserializing response content")
 		}
-		rsp, err := chat.User(user, nil, nil, "json_object", 0)
+
+		answers[id] = answer.Answer
+		result, err := api.VerifyTaskAnswer("notes", answers, api.VerificationURL)
 		if err != nil {
-			log.Fatal(err)
-		}
-
-		// repeat until we get correct answer for this question
-		for {
-			fmt.Println("Press 'Enter' to continue...")
-			fmt.Scanln()
-
-			// verify answer
-			var answer Answer
-			err = json.Unmarshal([]byte(rsp.Choices[0].Message.Content), &answer)
-			if err != nil {
-				log.Fatal("Error deserializing response content:", err)
-			}
-			answers[id] = answer.Answer
-			result, err := api.VerifyTaskAnswer("notes", answers, api.VerificationURL)
-			if err != nil {
-				if strings.Contains(err.Error(), id+" is incorrect") {
-					// wrong answer, try again
-					rsp, err = chat.User("Błędna odpowiedź. Zastanów się chwilę i podaj poprawną odpowiedź. NIE PODAWAJ TEJ SAMEJ BŁĘDNEJ ODPOWIEDZI PONOWNIE!", nil, nil, "json_object", 0) // feedback error to the chat to try again
-					if err != nil {
-						log.Fatal(err)
-					}
-				} else {
-					// good answer! move on to he next question
-					break
+			if strings.Contains(err.Error(), id+" is incorrect") {
+				rsp, err = chat.User("Błędna odpowiedź. Zastanów się chwilę i podaj poprawną odpowiedź. NIE PODAWAJ TEJ SAMEJ BŁĘDNEJ ODPOWIEDZI PONOWNIE!", nil, nil, "json_object", 0)
+				if err != nil {
+					return err
 				}
 			} else {
-				// victory
-				fmt.Println(result)
-				return
+				break
 			}
+		} else {
+			// victory
+			fmt.Println(result)
+			return nil
 		}
 	}
-	// answers["01"] = "2019"
-	// answers["02"] = "Adam"
-	// answers["03"] = "Jaskinia"
-	// answers["04"] = "2024-11-12"
-	// answers["05"] = "Lubawa"
+	return nil
 }
 
 // readOrDescribeImages returns key-value pairs: {filename: description} for all .png files found under sourceDir
