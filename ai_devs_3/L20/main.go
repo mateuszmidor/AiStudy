@@ -22,26 +22,26 @@ Otrzymasz tekst źródłowy na podstawie którego odpowiesz na pytanie uzytkowni
 Tekst źródłowy ma postać osobistego notatnika Rafała - jest on napisany w sposób nieuporządkownay, wyrywkowo i niedbale, Rafał opisuje w nim swoje przemyślenia
 i wspomina wydarzenia z ostatnich lat.
 # Zadanie:
-Odpowiedz JEDNYM SŁOWEM na pytanie uzytkownika w formacie JSON z polami "_thinking", "wrong_answers" oraz "answer", gdzie pole "_thinking" występuje jako pierwsze.
-Zacznij od zgromadzenia wszystkich informacji, które mogą być pomocne by odpowiedzieć na pytanie, i umieść je w polu "_thinking", nie pomijaj niczego!
+Odpowiedz JEDNYM SŁOWEM na pytanie uzytkownika, odpowiedź ma być w formacie JSON z polami "_przemyślenia", "błędne_odpowiedzi" oraz "odpowiedź", gdzie pole "_przemyślenia" występuje jako pierwsze.
+Zacznij od zgromadzenia wszystkich informacji, które mogą być pomocne by odpowiedzieć na pytanie, i umieść je w polu "_przemyślenia", nie pomijaj niczego!
 Następnie na podstawie zgromadzonych informacji wydedukuj najbardziej prawdopodobną odpowiedź i umieść ją w polu "answer".
 Jeśli uzytkownik powie, ze odpowiedź jest błędna, zapamiętaj ją w polu "wrong_answers", tak zeby nie podać błędnej odpowiedzi przy kolejnej próbie.
 # Przykład:
 pytanie: w którym roku Rafał spotkał Andrzeja?
 odpowiedź: 
 {
-"_thinking":"w notatniku Rafał wspomina, ze odwiedził Walencję w 2015 roku i ze było to 6 lat wcześniej, niz poznał Andrzeja",
-"wrong_answers":["2024","2023","2022"],
-"anwer":"2021"
+"_przemyślenia":"w notatniku Rafał wspomina, ze odwiedził Walencję w 2015 roku i ze było to 6 lat wcześniej, niz poznał Andrzeja",
+"błędne_odpowiedzi":["2024","2023","2022"],
+"odpowiedź":"2021"
 }
 Pamiętaj - odpowiadaj jednym słowem.
 # Notatnik Rafała:
 `
 
 type Answer struct {
-	Thinking     string   `json:"_thinking"`
-	WrongAnswers []string `json:"wrong_answers"`
-	Answer       string   `json:"answer"`
+	Thinking     string   `json:"_przemyślenia"`
+	WrongAnswers []string `json:"błędne_odpowiedzi"`
+	Answer       string   `json:"odpowiedź"`
 }
 
 func main() {
