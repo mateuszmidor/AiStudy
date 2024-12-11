@@ -77,22 +77,17 @@ func rebuildDialogs(dialogs Root) map[string]string {
 
 func rebuildDialog(info DialogInfo, pieces []string) {
 	const system = `
-Miała miejsce rozmowa telefoniczna.
-Znamy początek i koniec rozmowy telefonicznej, oraz listę kwestii prawdopodobnie wypowiadanych przez uczestników pomiędzy, ale nie wszystkie kwestie pasują do tej rozmowy.
-Twoim zadaniem jest dopasować kolejną wypowiadaną kwestię rozmowy do podanego początku rozmowy tak, zeby logicznie pasowała do początku rozmowy. 
-Masz dopasować kwestię z podanego zbioru mozliwych kwestii, nie wolno ci wymyślać swojej. Odpowiadaj dopasowaną kwestią bez zadnych modyfikacji, zachowaj interpunkcję i wielkość liter. Przykład:
-<pytanie>
+Dopasuj najlepiej pasującą kwestię spośród dostępnych kwestii do rozmowy.
+Przykład:
 Mozliwe kwestie:
 "- Wiedziałeś ze Barbara urodziła się w kwietniu?"
 "- Dziś gwiazdy świecą mocniej niz zazwyczaj"
 "- Biegałem, bo lubię zacząć dzień od sportu"
-Dopasuj kolejną kwestię do dialogu:
+Rozmowa:
 "- Co robiłeś wczoraj rano?"
-<pytanie/>
-<odpowiedź>
+Dopasowana kwestia:
 "- Biegałem, bo lubię zacząć dzień od sportu"
-<odpowieź/>
-	`
+`
 
 	// chat, err := openai.NewChatWithMemory(system, "gpt-4o", 5000, true)
 	// if err != nil {
@@ -108,7 +103,7 @@ Dopasuj kolejną kwestię do dialogu:
 		fmt.Println(lines)
 		fmt.Print("Press 'Enter' to continue...")
 		fmt.Scanln()
-		user := "Mozliwe kwestie:\n" + strings.Join(pieces, "\n") + "\nDopasuj kolejną kwestię do dialogu:\n" + lines
+		user := "Mozliwe kwestie:\n" + strings.Join(pieces, "\n") + "\nRozmowa:\n" + lines
 		rsp, err := openai.CompletionCheap(user, system, nil)
 		if err != nil {
 			log.Fatal(err)
