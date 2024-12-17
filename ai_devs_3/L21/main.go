@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"os"
@@ -12,6 +13,8 @@ import (
 
 	"github.com/mateuszmidor/AiStudy/ai_devs_3/api"
 	"github.com/mateuszmidor/AiStudy/ai_devs_3/internal/openai"
+
+	"golang.org/x/text/unicode/norm"
 )
 
 type Root struct {
@@ -49,22 +52,47 @@ func main() {
 	questionsURL := "https://centrala.ag3nts.org/data/" + api.ApiKey() + "/phone_questions.json"
 	questions := map[string]string{}
 	api.FillDataFromJSONURL(questionsURL, &questions)
-	fmt.Println(questions)
+	// fmt.Println(questions)
 
 	// get dialogs
 	dialogsURL := "https://centrala.ag3nts.org/data/" + api.ApiKey() + "/phone.json"
-	dialogs, err := api.GetOrFetch(dialogsURL, "phone.json")
+	var phone = Root{}
+	api.FillDataFromJSONURL(dialogsURL, &phone)
+
+	// Fix some weird and problematic whitespace in the data
+	fixText(&phone)
+
+	// Dump dialogs for troubleshooting
+	phoneData, err := json.MarshalIndent(phone, "", "  ")
 	if err != nil {
 		log.Fatal(err)
 	}
-	var phone = Root{}
-	api.FillDataFromJSON(dialogs, &phone)
+	err = os.WriteFile("phone.json", phoneData, 0644)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	// get additional facts
 	// facts := composeDocumentFromFragments("facts/")
 	// fmt.Println(facts)
 
 	rebuildDialogs(phone)
+}
+
+// input text contains '\u00A0' that complicates text processing; let's remove it
+func fixText(v any) {
+	data, err := json.Marshal(v)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	dataStr := string(data)
+	newDataStr := strings.ReplaceAll(dataStr, "\u00A0", " ")
+	newData := []byte(newDataStr)
+	err = json.Unmarshal(newData, &v)
+	if err != nil {
+		log.Fatal(err)
+	}
 }
 
 func rebuildDialogs(dialogs Root) map[string]string {
@@ -77,50 +105,53 @@ func rebuildDialogs(dialogs Root) map[string]string {
 
 func rebuildDialog(info DialogInfo, pieces []string) {
 	const system = `
-Dopasuj najlepiej pasującą kwestię spośród dostępnych kwestii do rozmowy.
+Dopasuj najlepiej pasującą kwestię spośród <Dostępne Kwestie> jako kontynuację <Dotychczasowa Rozmowa>. Zwróć jedynie samą dopasowaną kwestię, bez komentarzy ani formatowania.
+Nie wolno Ci uzywac kwestii juz wypowidzianych w sekcji <Dotychczasowa Rozmowa>. Uzywaj tylko kwestii dostepnych w sekcji <Dostępne Kwestie>.
 Przykład:
-Mozliwe kwestie:
+<Dostępne Kwestie>
 "- Wiedziałeś ze Barbara urodziła się w kwietniu?"
 "- Dziś gwiazdy świecą mocniej niz zazwyczaj"
 "- Biegałem, bo lubię zacząć dzień od sportu"
-Rozmowa:
+<Dostępne Kwestie/>
+<Dotychczasowa Rozmowa>
 "- Co robiłeś wczoraj rano?"
-Dopasowana kwestia:
+<Dotychczasowa Rozmowa/>
+<Dopasowanie>
 "- Biegałem, bo lubię zacząć dzień od sportu"
+<Dopasowanie>
 `
 
-	// chat, err := openai.NewChatWithMemory(system, "gpt-4o", 5000, true)
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-
 	pieces = append(pieces, info.End)
-	fmt.Println(strings.Join(pieces, "\n"))
-	fmt.Println()
+	for i := range pieces {
+		pieces[i] = norm.NFC.String(pieces[i])
+	}
+
 	lines := info.Start
 	for i := 1; i <= info.Length+2; i++ { // +2 for begin and end
 		fmt.Printf("\nnum pieces: %d, step %d/%d\n", len(pieces), i, info.Length)
-		fmt.Println(lines)
 		fmt.Print("Press 'Enter' to continue...")
 		fmt.Scanln()
-		user := "Mozliwe kwestie:\n" + strings.Join(pieces, "\n") + "\nRozmowa:\n" + lines
-		rsp, err := openai.CompletionCheap(user, system, nil)
+		user := "<Dostępne Kwestie>\n" + strings.Join(pieces, "\n") + "\n<Dostępne Kwestie/>\n<Dotychczasowa Rozmowa>\n" + lines + "\n<Dotychczasowa Rozmowa/>"
+
+		fmt.Println(user)
+		rsp, err := openai.CompletionStrong(user, system, nil)
 		if err != nil {
 			log.Fatal(err)
 		}
 		text := rsp
-		fmt.Println("###", text)
+		// fmt.Println("### rsp:", text)
 		if text == info.End {
+			fmt.Println(text)
 			log.Print("FINISH")
 			return
 		}
 		// Remove the selected text from pieces using slices package
 		pieces = slices.DeleteFunc(pieces, func(piece string) bool {
-			return strings.Contains(strings.ToLower(piece), strings.ToLower(text))
+			return piece == text
 		})
 		lines += "\n" + text
-
 	}
+	fmt.Println("FAIL")
 }
 
 func composeDocumentFromFragments(sourceDir string) string {
