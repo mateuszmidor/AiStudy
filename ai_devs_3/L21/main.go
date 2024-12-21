@@ -2,49 +2,29 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
 	"os"
 	"path/filepath"
-	"slices"
 	"sort"
 	"strconv"
 	"strings"
 
 	"github.com/mateuszmidor/AiStudy/ai_devs_3/api"
-	"github.com/mateuszmidor/AiStudy/ai_devs_3/internal/openai"
-
-	"golang.org/x/text/unicode/norm"
 )
 
 type Root struct {
-	Rozmowa1 Rozmowa1 `json:"rozmowa1"`
-	Rozmowa2 Rozmowa2 `json:"rozmowa2"`
-	Rozmowa3 Rozmowa3 `json:"rozmowa3"`
-	Rozmowa4 Rozmowa4 `json:"rozmowa4"`
-	Rozmowa5 Rozmowa5 `json:"rozmowa5"`
+	Rozmowa1 Rozmowa  `json:"rozmowa1"`
+	Rozmowa2 Rozmowa  `json:"rozmowa2"`
+	Rozmowa3 Rozmowa  `json:"rozmowa3"`
+	Rozmowa4 Rozmowa  `json:"rozmowa4"`
+	Rozmowa5 Rozmowa  `json:"rozmowa5"`
 	Reszta   []string `json:"reszta"`
 }
-type DialogInfo struct {
+
+type Rozmowa struct {
 	Start  string `json:"start"`
 	End    string `json:"end"`
-	Length int    `json:"length"`
-}
-
-type Rozmowa1 struct {
-	DialogInfo
-}
-type Rozmowa2 struct {
-	DialogInfo
-}
-type Rozmowa3 struct {
-	DialogInfo
-}
-type Rozmowa4 struct {
-	DialogInfo
-}
-type Rozmowa5 struct {
-	DialogInfo
+	Length int    `json:"length"` // e.g. 3 means, Person1, Person2, Person3 - it includes Start and End
 }
 
 func main() {
@@ -60,7 +40,7 @@ func main() {
 	api.FillDataFromJSONURL(dialogsURL, &phone)
 
 	// Fix some weird and problematic whitespace in the data
-	fixText(&phone)
+	fixJSON(&phone)
 
 	// Dump dialogs for troubleshooting
 	phoneData, err := json.MarshalIndent(phone, "", "  ")
@@ -80,7 +60,7 @@ func main() {
 }
 
 // input text contains '\u00A0' that complicates text processing; let's remove it
-func fixText(v any) {
+func fixJSON(v any) {
 	data, err := json.Marshal(v)
 	if err != nil {
 		log.Fatal(err)
@@ -93,65 +73,6 @@ func fixText(v any) {
 	if err != nil {
 		log.Fatal(err)
 	}
-}
-
-func rebuildDialogs(dialogs Root) map[string]string {
-
-	result := map[string]string{}
-
-	rebuildDialog(dialogs.Rozmowa3.DialogInfo, dialogs.Reszta)
-	return result
-}
-
-func rebuildDialog(info DialogInfo, pieces []string) {
-	const system = `
-Dopasuj najlepiej pasującą kwestię spośród <Dostępne Kwestie> jako kontynuację <Dotychczasowa Rozmowa>. Zwróć jedynie samą dopasowaną kwestię, bez komentarzy ani formatowania.
-Nie wolno Ci uzywac kwestii juz wypowidzianych w sekcji <Dotychczasowa Rozmowa>. Uzywaj tylko kwestii dostepnych w sekcji <Dostępne Kwestie>.
-Przykład:
-<Dostępne Kwestie>
-"- Wiedziałeś ze Barbara urodziła się w kwietniu?"
-"- Dziś gwiazdy świecą mocniej niz zazwyczaj"
-"- Biegałem, bo lubię zacząć dzień od sportu"
-<Dostępne Kwestie/>
-<Dotychczasowa Rozmowa>
-"- Co robiłeś wczoraj rano?"
-<Dotychczasowa Rozmowa/>
-<Dopasowanie>
-"- Biegałem, bo lubię zacząć dzień od sportu"
-<Dopasowanie>
-`
-
-	pieces = append(pieces, info.End)
-	for i := range pieces {
-		pieces[i] = norm.NFC.String(pieces[i])
-	}
-
-	lines := info.Start
-	for i := 1; i <= info.Length+2; i++ { // +2 for begin and end
-		fmt.Printf("\nnum pieces: %d, step %d/%d\n", len(pieces), i, info.Length)
-		fmt.Print("Press 'Enter' to continue...")
-		fmt.Scanln()
-		user := "<Dostępne Kwestie>\n" + strings.Join(pieces, "\n") + "\n<Dostępne Kwestie/>\n<Dotychczasowa Rozmowa>\n" + lines + "\n<Dotychczasowa Rozmowa/>"
-
-		fmt.Println(user)
-		rsp, err := openai.CompletionStrong(user, system, nil)
-		if err != nil {
-			log.Fatal(err)
-		}
-		text := rsp
-		// fmt.Println("### rsp:", text)
-		if text == info.End {
-			fmt.Println(text)
-			log.Print("FINISH")
-			return
-		}
-		// Remove the selected text from pieces using slices package
-		pieces = slices.DeleteFunc(pieces, func(piece string) bool {
-			return piece == text
-		})
-		lines += "\n" + text
-	}
-	fmt.Println("FAIL")
 }
 
 func composeDocumentFromFragments(sourceDir string) string {
