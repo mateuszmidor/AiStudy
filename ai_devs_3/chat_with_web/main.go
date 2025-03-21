@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"log"
+	"net/url"
 	"os"
 	"regexp"
 	"strings"
@@ -13,11 +14,38 @@ import (
 	"github.com/mateuszmidor/AiStudy/ai_devs_3/internal/openai"
 )
 
+// place the input document in system prompt at the very beginning, so OpenID prompt caching is used
+const system = "When answering the question, use only the information you can find in the Input Document. ONLY that information is allowed! Input Document:\n"
+
+func main() {
+	url := getURLFromCmdLineArgs()
+	declutteredWebPageMD := webPageToMarkDown(url)
+	chat := prepareChat(system + declutteredWebPageMD)
+
+	// question-answer loop
+	for {
+		fmt.Print("> ")
+		question := getQuestion()
+		user := question
+		answer, err := chat.User(user, nil, nil, "text", 0)
+		if err != nil {
+			log.Fatal(err)
+		}
+		fmt.Println(answer.Choices[0].Message.Content)
+		fmt.Println()
+	}
+}
+
+func getURLFromCmdLineArgs() string {
+	if len(os.Args) < 2 {
+		log.Fatal("you need to provide input URL")
+	}
+	url := os.Args[1]
+	return url
+}
+
 func declutteredArticleMD(inputMD string) string {
-	// Remove links from the markdown content
-	declutteredMD := inputMD
-	declutteredMD = removeLinks(declutteredMD)
-	return declutteredMD
+	return removeLinks(inputMD)
 }
 
 // Helper function to remove links from markdown
@@ -33,50 +61,67 @@ func removeLinks(md string) string {
 	return strings.Join(filteredLines, "\n")
 }
 
-func articleToMarkDown(url string) string {
-	// extract filename from url
-	parts := strings.Split(url, "/")
-	filename := parts[len(parts)-1] + ".md"
+func webPageToMarkDown(pageURL string) string {
+	filename := extractFilename(pageURL)
+	filepath := os.TempDir() + filename
+	if content, err := readFileIfExists(filepath); err == nil {
+		return content
+	}
 
-	// check if file exists in "downloads" directory
-	filePath := "downloads/" + filename
+	articleHTML := fetchArticleHTML(pageURL)
+	articleMD := convertHTMLToMarkdown(articleHTML)
+	declutteredMD := declutteredArticleMD(articleMD)
+
+	saveMarkdownToFile(declutteredMD, filepath)
+
+	return declutteredMD
+}
+
+func extractFilename(pageURL string) string {
+	pageURL = strings.TrimSuffix(pageURL, "/")
+	parts := strings.Split(pageURL, "/")
+	filename := parts[len(parts)-1] + ".md"
+	decodedFilename, err := url.QueryUnescape(filename)
+	if err != nil {
+		log.Fatalf("failed to url-decode filename: %+v", err)
+	}
+	return decodedFilename
+}
+
+func readFileIfExists(filePath string) (string, error) {
 	if _, err := os.Stat(filePath); err == nil {
-		// file exists, return its contents
 		content, err := os.ReadFile(filePath)
 		if err != nil {
 			log.Fatalf("failed to read file %s: %+v", filePath, err)
 		}
-		return string(content)
+		log.Println("read page from:", filePath)
+		return string(content), nil
 	}
+	return "", fmt.Errorf("file does not exist")
+}
 
-	// fetch the article
-	articleHTML, err := api.FetchData(url)
+func fetchArticleHTML(pageURL string) string {
+	articleHTML, err := api.FetchData(pageURL)
 	if err != nil {
 		log.Fatalf("Error fetching questions: %+v", err)
 	}
+	return articleHTML
+}
 
-	// transform article HTML to MarkDown for LLM to understand it better
+func convertHTMLToMarkdown(articleHTML string) string {
 	articleMD, err := htmltomarkdown.ConvertString(articleHTML)
 	if err != nil {
 		log.Fatal(err)
 	}
+	return articleMD
+}
 
-	declutteredArticleMD := declutteredArticleMD(articleMD)
-
-	if _, err := os.Stat("downloads"); os.IsNotExist(err) {
-		err := os.Mkdir("downloads", os.ModePerm)
-		if err != nil {
-			log.Fatalf("failed to create downloads directory: %+v", err)
-		}
-	}
-	// save the MarkDown article for optional investigation
-	err = os.WriteFile("downloads/"+filename, []byte(declutteredArticleMD), os.ModePerm)
+func saveMarkdownToFile(markdownContent, filename string) {
+	err := os.WriteFile(filename, []byte(markdownContent), os.ModePerm)
 	if err != nil {
-		log.Fatalf("failed to save article to file article.md: %+v", err)
+		log.Fatalf("failed to save article to %s: %+v", filename, err)
 	}
 	log.Println("saved page as:", filename)
-
-	return declutteredArticleMD
 }
 
 func getQuestion() string {
@@ -88,30 +133,11 @@ func getQuestion() string {
 	return strings.TrimSpace(line)
 }
 
-func main() {
-	url := getURLFromCmdLineArgs()
-	declutteredArticleMD := articleToMarkDown(url)
-
-	// question-answer loop
-	for {
-		fmt.Print("> ")
-		question := getQuestion()
-		system := "When answering the question, use only the information you can find in the Input Document. ONLY that information is allowed!"
-		user := "Question: " + question + "\nInput Document:\n" + declutteredArticleMD
-		openai.Debug = true
-		answer, err := openai.CompletionCheap(user, system, nil)
-		if err != nil {
-			log.Fatal(err)
-		}
-		fmt.Println(answer)
-		fmt.Println()
+func prepareChat(system string) *openai.ChatWithMemory {
+	openai.Debug = true
+	chat, err := openai.NewChatWithMemory(system, "gpt-4o-mini", 15000, false)
+	if err != nil {
+		log.Fatal(err)
 	}
-}
-
-func getURLFromCmdLineArgs() string {
-	if len(os.Args) < 2 {
-		log.Fatal("you need to provide input URL")
-	}
-	url := os.Args[1]
-	return url
+	return chat
 }
