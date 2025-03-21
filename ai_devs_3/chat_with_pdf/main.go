@@ -34,6 +34,9 @@ func readFile(txtFilename string) string {
 
 func convertPdfToTxt(pdfFilename string) string {
 	txtFilename := pdfFilename + ".txt"
+	if _, err := os.Stat(txtFilename); err == nil {
+		return txtFilename
+	}
 	cmd := fmt.Sprintf("pdftotext -layout %s %s", pdfFilename, txtFilename)
 	err := runCommand(cmd)
 	if err != nil {
