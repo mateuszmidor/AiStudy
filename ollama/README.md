@@ -7,6 +7,7 @@ https://ollama.com/
 ## Run
 
 ```sh
+OLLAMA_CONTEXT_LENGTH=16000 ollama serve # default is 4k context window, too little for function calling, see: ollama ps
 ollama run llama3
 ```
 ### API
