@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/signal"
 	"strings"
+	"syscall"
 
 	"github.com/MarkKremer/microphone/v2"
 
@@ -44,7 +45,7 @@ func main() {
 
 	// Stop the stream when the user tries to quit the program.
 	sig := make(chan os.Signal, 1)
-	signal.Notify(sig, os.Interrupt, os.Kill)
+	signal.Notify(sig, os.Interrupt, syscall.SIGTERM)
 	go func() {
 		<-sig
 		stream.Stop()
