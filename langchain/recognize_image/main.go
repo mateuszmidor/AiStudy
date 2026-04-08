@@ -8,6 +8,7 @@ import (
 	"os"
 
 	"github.com/tmc/langchaingo/llms"
+	"github.com/tmc/langchaingo/llms/ollama"
 	"github.com/tmc/langchaingo/llms/openai"
 )
 
@@ -18,23 +19,61 @@ func main() {
 		log.Fatal(err)
 	}
 
-	// 2. initializes langchain for image recognition
+	// 2. recognize image using LLM over langchain
+	// response := recognizeWithOllama(imageData)
+	response := recognizeWithOpenAI(imageData)
+
+	// 3. prints out description of the image
+	fmt.Println("Image Description:")
+	fmt.Println(response.Choices[0].Content)
+	fmt.Println()
+
+	// 4. prints out token usage
+	fmt.Printf("Token Usage: %d input tokens, %d output tokens, %d total tokens\n",
+		response.Choices[0].GenerationInfo["PromptTokens"],
+		response.Choices[0].GenerationInfo["CompletionTokens"],
+		response.Choices[0].GenerationInfo["TotalTokens"])
+}
+
+func recognizeWithOllama(imageData []byte) *llms.ContentResponse {
+	// prepare the model client
 	ctx := context.Background()
-	llm, err := openai.New(openai.WithModel("gpt-4o-mini"))
+	llm, err := ollama.New(ollama.WithModel("qwen3.5:9b"), ollama.WithServerURL("http://localhost:11434")) // vision-capable model
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	// 3. uses OpenAI multi-modal model to analyze and recognize the image
-	// Encode image to base64
+	// prepare prompt
+	textPart := llms.TextPart("Describe this image in one sentence")
+	imagePart := llms.BinaryPart("image/png", imageData)
+	messages := []llms.MessageContent{
+		{
+			Role:  llms.ChatMessageTypeHuman,
+			Parts: []llms.ContentPart{textPart, imagePart},
+		},
+	}
+
+	// generate response from the model
+	response, err := llm.GenerateContent(ctx, messages)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return response
+}
+
+func recognizeWithOpenAI(imageData []byte) *llms.ContentResponse {
+	// prepare the model client
+	ctx := context.Background()
+	llm, err := openai.New(openai.WithModel("gpt-4o-mini")) // vision-capable model
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// prepare prompt
 	base64Image := base64.StdEncoding.EncodeToString(imageData)
 	imageURL := "data:image/png;base64," + base64Image
-
-	// Create message content with image
-	textPart := llms.TextPart("Describe this image in detail")
+	textPart := llms.TextPart("Describe this image in one sentence")
 	imagePart := llms.ImageURLPart(imageURL)
-
-	// Create messages
 	messages := []llms.MessageContent{
 		{
 			Role:  llms.ChatMessageTypeHuman,
@@ -47,31 +86,5 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	// 4. prints out description of the image
-	fmt.Println("Image Description:")
-	fmt.Println(response.Choices[0].Content)
-	fmt.Println()
-
-	// 5. prints out token usage
-	if len(response.Choices) > 0 && response.Choices[0].GenerationInfo != nil {
-		if promptTokens, ok := response.Choices[0].GenerationInfo["PromptTokens"].(int); ok {
-			if completionTokens, ok := response.Choices[0].GenerationInfo["CompletionTokens"].(int); ok {
-				if totalTokens, ok := response.Choices[0].GenerationInfo["TotalTokens"].(int); ok {
-					fmt.Printf("Token Usage: %d input tokens, %d output tokens, %d total tokens\n",
-						promptTokens,
-						completionTokens,
-						totalTokens)
-				} else {
-					fmt.Println("Token usage information not available")
-				}
-			} else {
-				fmt.Println("Token usage information not available")
-			}
-		} else {
-			fmt.Println("Token usage information not available")
-		}
-	} else {
-		fmt.Println("Token usage information not available")
-	}
+	return response
 }
