@@ -1,4 +1,4 @@
-module github.com/mateuszmidor/AiStudy/langchain
+module simplest
 
 go 1.25.7
 
