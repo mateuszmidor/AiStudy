@@ -12,6 +12,8 @@ import (
 	"github.com/tmc/langchaingo/llms/openai"
 )
 
+const imagePrompt = "Describe this image in one sentence"
+
 func main() {
 	// 1. loads "tree.png" image from current directory
 	imageData, err := os.ReadFile("tree.png")
@@ -20,8 +22,7 @@ func main() {
 	}
 
 	// 2. recognize image using LLM over langchain
-	// response := recognizeWithOllama(imageData)
-	response := recognizeWithOpenAI(imageData)
+	response := recognizeWithOllama(imageData)
 
 	// 3. prints out description of the image
 	fmt.Println("Image Description:")
@@ -29,10 +30,11 @@ func main() {
 	fmt.Println()
 
 	// 4. prints out token usage
+	info := response.Choices[0].GenerationInfo
 	fmt.Printf("Token Usage: %d input tokens, %d output tokens, %d total tokens\n",
-		response.Choices[0].GenerationInfo["PromptTokens"],
-		response.Choices[0].GenerationInfo["CompletionTokens"],
-		response.Choices[0].GenerationInfo["TotalTokens"])
+		info["PromptTokens"],
+		info["CompletionTokens"],
+		info["TotalTokens"])
 }
 
 func recognizeWithOllama(imageData []byte) *llms.ContentResponse {
@@ -44,7 +46,7 @@ func recognizeWithOllama(imageData []byte) *llms.ContentResponse {
 	}
 
 	// prepare prompt
-	textPart := llms.TextPart("Describe this image in one sentence")
+	textPart := llms.TextPart(imagePrompt)
 	imagePart := llms.BinaryPart("image/png", imageData)
 	messages := []llms.MessageContent{
 		{
@@ -72,7 +74,7 @@ func recognizeWithOpenAI(imageData []byte) *llms.ContentResponse {
 	// prepare prompt
 	base64Image := base64.StdEncoding.EncodeToString(imageData)
 	imageURL := "data:image/png;base64," + base64Image
-	textPart := llms.TextPart("Describe this image in one sentence")
+	textPart := llms.TextPart(imagePrompt)
 	imagePart := llms.ImageURLPart(imageURL)
 	messages := []llms.MessageContent{
 		{
