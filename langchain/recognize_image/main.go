@@ -15,7 +15,9 @@ import (
 const imagePrompt = "Describe this image in one sentence"
 
 func main() {
-	// Read image filename from command line argument "go run . -- filename.png"
+	if len(os.Args) < 2 {
+		log.Fatal("Usage: go run . tree.png")
+	}
 	filePath := os.Args[1]
 	// Validate file exists
 	if _, err := os.Stat(filePath); os.IsNotExist(err) {
