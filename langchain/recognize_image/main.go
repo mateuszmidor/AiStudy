@@ -15,13 +15,20 @@ import (
 const imagePrompt = "Describe this image in one sentence"
 
 func main() {
-	// 1. loads "tree.png" image from current directory
-	imageData, err := os.ReadFile("tree.png")
+	// Read image filename from command line argument "go run . -- filename.png"
+	filePath := os.Args[1]
+	// Validate file exists
+	if _, err := os.Stat(filePath); os.IsNotExist(err) {
+		log.Fatalf("File not found: %s", filePath)
+	}
+
+	// 2. recognize image using LLM over langchain
+	imageData, err := os.ReadFile(filePath)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	// 2. recognize image using LLM over langchain
+	// 3. recognize image using LLM over langchain
 	response := recognizeWithOllama(imageData)
 
 	// 3. prints out description of the image
@@ -40,7 +47,7 @@ func main() {
 func recognizeWithOllama(imageData []byte) *llms.ContentResponse {
 	// prepare the model client
 	ctx := context.Background()
-	llm, err := ollama.New(ollama.WithModel("qwen3.5:9b"), ollama.WithServerURL("http://localhost:11434")) // vision-capable model
+	llm, err := ollama.New(ollama.WithModel("qwen3.5:2b"), ollama.WithServerURL("http://localhost:11434")) // vision-capable model
 	if err != nil {
 		log.Fatal(err)
 	}
