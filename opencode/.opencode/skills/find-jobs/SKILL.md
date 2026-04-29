@@ -5,12 +5,12 @@ description: This skill is dedicated for finding and listing job offers in IT. U
 
 # Find Jobs Skill
 
-This skill fetches current job listings from the MCP server "czyjesteldorado", applies precise filters, and presents results as a Markdown table.
+This skill fetches current job listings from the MCP server "czyjesteldorado", applies precise filters, and presents results as a Markdown list.
 
 ## Step-by-Step Instructions
 
 ### Step 1 — Fetch offers via MCP
-In order to fetch current job offers for Golang dvelopers, contact MCP server "czyjesteldorado" with required phrases ["Go", "Golang"] and excluded phrases ["Frontend", "Fullstack", "QA", "SRE", "DevOps", "Manager"]; check with MCP for details on how to filter results.
+In order to fetch current job offers for Golang developers, it is obligatory to contact MCP server "czyjesteldorado" with required phrases ["Go", "Golang"] and excluded phrases ["Frontend", "Fullstack", "QA", "SRE", "DevOps", "Manager"]. IMPORTANT: double check with MCP for details on how to build search phrase with include and exclude rules, before asking the MCP for job offers.
 
 ### Step 2 — go through the offers one by one and filter by seniority
 **Keep** offers where the declared seniority is one of:
@@ -25,9 +25,9 @@ If seniority is not stated in the offer, **keep it**
 
 ### Step 3 — go through the offers one by one and filter by location
 Filtering rules:
-- For offers with **work mode** = **fully remote**  -> always KEEP
-- For offers with **work mode** = **office** or **hybrid** and location one of ["Gdańsk", "Sopot", "Gdynia", "Trójmiasto"] -> KEEP
-- Otherwise -> DISCARD
+- If offer has **work mode** = **fully remote**  -> always KEEP
+- If offer has **work mode** = **office** or **hybrid** and location one of ["Gdańsk", "Sopot", "Gdynia", "Trójmiasto"] -> always KEEP
+- In all other cases -> DISCARD
 
 ### Step 4 — Collect data per offer
 
@@ -43,7 +43,7 @@ For each remaining offer, collect:
 | Link | Clickable markdown link |
 
 ### Step 5 - Format Output
-Expected output format is a Markdown ordered list, where Salary = '-' means salary not provided in the offer.
+Expected output format is a Markdown ordered list, use 'N/A' where salary or location is not provided in the offer.
 Example output list:
 
 
@@ -53,7 +53,7 @@ Example output list:
    - Company: CodiLime
    - Salary: 17000-24000 PLN
    - Mode: remote
-   - Location: -
+   - Location: N/A
    - Technologies: Go, Web API, SQL, NoSQL, Redis, MongoDB, Kafka, Kubernetes, OIDC, JWT
    - Link: https://czyjesteldorado.pl/praca/327710-mid-senior-go-engineer-with-web-api-experience-codilime
 
@@ -67,8 +67,8 @@ Example output list:
 
 3. **Senior Golang Developer**
    - Company: Atos Poland Global Services Sp. z o.o.
-   - Salary: -
+   - Salary: N/A
    - Mode: remote
-   - Location: -
+   - Location: N/A
    - Technologies: Go, Kubernetes, GitOps, GitHub Actions, OpenShift
    - Link: https://czyjesteldorado.pl/praca/337707-senior-golang-developer-atos-poland-global-services-sp-z-o-o
