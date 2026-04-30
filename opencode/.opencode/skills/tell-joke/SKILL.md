@@ -5,13 +5,13 @@ description: This skill returns a single random joke.
 
 # Tell Joke Skill
 
-This skill fetches single joke using ./scripts/fetch_joke.sh script and returns it to the caller.
+This skill fetches single joke, then formats it according to template, then returns it to the caller.
 
 ## Step-by-Step Instructions
 
 ### Step 1 - Fetch the joke
 
-Execute script ./scripts/fetch_joke.sh to get a single random joke
+Execute script ./scripts/fetch_joke.sh to get a single random joke.
 
 ### Step 2 - format the joke text according to template
 
