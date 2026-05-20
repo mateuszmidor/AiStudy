@@ -1,0 +1,16 @@
+{{range .}}
+<div class="col-md-4 col-lg-3">
+    <div class="card note-card h-100" onclick="viewNote('{{.ID}}')">
+        <div class="card-body">
+            <h5 class="card-title">{{.Title}}</h5>
+            <p class="text-muted small mb-2">{{.CreatedAt.Format "Jan 02, 2006"}}</p>
+            {{if .Tags}}
+            <div class="mb-2">
+                {{range .Tags}}<span class="badge bg-secondary me-1">{{.}}</span>{{end}}
+            </div>
+            {{end}}
+            <p class="card-text text-truncate">{{.Content}}</p>
+        </div>
+    </div>
+</div>
+{{end}}
