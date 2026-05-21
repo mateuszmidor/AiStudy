@@ -26,6 +26,13 @@ opencode
 #/opsx:explore - to explore ideas, ask questions, find alternatives
 ```
 
+## Upgrading openspec tool
+
+```sh
+# after upgrading the openspec tool, run the update cmd in your project root dir:
+openspec update # re-scans installed tools and regenerates all skills/commands
+```
+
 ## General workflow
 
 /opsx:propose ──► /opsx:apply ──► /opsx:sync ──► /opsx:archive
