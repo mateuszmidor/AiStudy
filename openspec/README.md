@@ -36,3 +36,9 @@ openspec update # re-scans installed tools and regenerates all skills/commands
 ## General workflow
 
 /opsx:propose ──► /opsx:apply ──► /opsx:sync ──► /opsx:archive
+
+## OpenSpec on steroids - intent driven
+
+This is an improvement for OpenSpec - enhanced schema and additional skills:
+- https://intent-driven.dev/blog/
+- https://github.com/intent-driven-dev/intent-driven-template
