@@ -4,10 +4,36 @@ import (
 	"fmt"
 	"os"
 	"runtime"
+	"strings"
 
 	"github.com/prometheus/procfs"
 	"github.com/prometheus/procfs/sysfs"
+	"github.com/shirou/gopsutil/v4/sensors"
 )
+
+func cpuTemperature() string {
+	temps, err := sensors.SensorsTemperatures()
+	if err != nil {
+		return "N/A"
+	}
+
+	var total, count float64
+	for _, t := range temps {
+		key := strings.ToLower(t.SensorKey)
+		if strings.Contains(key, "k10temp") ||
+			strings.Contains(key, "coretemp") ||
+			strings.Contains(key, "zen") {
+			total += t.Temperature
+			count++
+		}
+	}
+
+	if count == 0 {
+		return "N/A"
+	}
+
+	return fmt.Sprintf("%d", int(total/count))
+}
 
 func main() {
 	pfs, err := procfs.NewDefaultFS()
@@ -90,4 +116,11 @@ func main() {
 
 	fmt.Printf("CPU Speed (MHz): %s\n", avgMhzStr)
 	fmt.Printf("Max CPU Speed (MHz): %s\n", maxMhzStr)
+
+	cpuTemp := cpuTemperature()
+	if cpuTemp == "N/A" {
+		fmt.Println("CPU Temperature (Avg): N/A")
+	} else {
+		fmt.Printf("CPU Temperature (Avg): %s°C\n", cpuTemp)
+	}
 }
