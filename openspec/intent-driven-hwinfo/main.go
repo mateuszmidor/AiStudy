@@ -5,23 +5,32 @@ import (
 	"os"
 	"runtime"
 
+	"github.com/prometheus/procfs"
 	"github.com/prometheus/procfs/sysfs"
-	"github.com/shirou/gopsutil/v4/cpu"
 )
 
 func main() {
-	info, err := cpu.Info()
-	if err != nil || len(info) == 0 {
+	pfs, err := procfs.NewDefaultFS()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: unable to read CPU information\n")
+		os.Exit(1)
+	}
+	cpuInfo, err := pfs.CPUInfo()
+	if err != nil || len(cpuInfo) == 0 {
 		fmt.Fprintf(os.Stderr, "Error: unable to read CPU information\n")
 		os.Exit(1)
 	}
 
-	manufacturer := info[0].VendorID
-	model := info[0].ModelName
+	manufacturer := cpuInfo[0].VendorID
+	model := cpuInfo[0].ModelName
 	architecture := runtime.GOARCH
 
-	physicalCores, _ := cpu.Counts(false)
-	logicalCores, _ := cpu.Counts(true)
+	seen := make(map[string]struct{})
+	for _, c := range cpuInfo {
+		seen[c.PhysicalID+":"+c.CoreID] = struct{}{}
+	}
+	physicalCores := len(seen)
+	logicalCores := len(cpuInfo)
 
 	avgMhzStr := "N/A"
 	maxMhzStr := "N/A"

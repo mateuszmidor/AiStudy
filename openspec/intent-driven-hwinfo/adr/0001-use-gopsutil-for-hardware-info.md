@@ -1,5 +1,9 @@
 # Use gopsutil/v4/cpu for CPU hardware information
 
+## Status
+
+Superseded by [ADR-0002](0002-use-prometheus-procfs-for-cpu-info.md)
+
 ## Context and Problem Statement
 
 The hwinfo CLI needs to read CPU hardware information (manufacturer, model, architecture, core counts, speeds) on Linux amd64. The data is available via `/proc/cpuinfo` but requires manual parsing of unstructured text with varying formats across kernel versions.

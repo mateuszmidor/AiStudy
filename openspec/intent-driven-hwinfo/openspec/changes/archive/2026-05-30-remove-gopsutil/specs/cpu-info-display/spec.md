@@ -1,10 +1,4 @@
-# CPU Info Display
-
-## Purpose
-
-Display CPU hardware information in a structured human-readable format on Linux (amd64). Non-frequency data (manufacturer, model, architecture, core counts) is sourced from the prometheus/procfs library. Frequency data (current speed, max speed) is sourced from the prometheus/procfs/sysfs package reading kernel sysfs cpufreq files.
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: Display CPU information
 The tool SHALL read CPU hardware information and display it in a structured human-readable format.
