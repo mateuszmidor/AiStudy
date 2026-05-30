@@ -5,6 +5,7 @@ import (
 	"os"
 	"runtime"
 
+	"github.com/prometheus/procfs/sysfs"
 	"github.com/shirou/gopsutil/v4/cpu"
 )
 
@@ -22,24 +23,33 @@ func main() {
 	physicalCores, _ := cpu.Counts(false)
 	logicalCores, _ := cpu.Counts(true)
 
-	var totalMhz float64
-	var count int
-	for _, c := range info {
-		if c.Mhz > 0 {
-			totalMhz += c.Mhz
-			count++
+	avgMhzStr := "N/A"
+	maxMhzStr := "N/A"
+
+	fs, err := sysfs.NewDefaultFS()
+	if err == nil {
+		cpuFreqs, err := fs.SystemCpufreq()
+		if err == nil {
+			var currentTotal, maxTotal float64
+			var currentCount, maxCount int
+			for _, cf := range cpuFreqs {
+				if cf.ScalingCurrentFrequency != nil {
+					currentTotal += float64(*cf.ScalingCurrentFrequency) / 1000.0
+					currentCount++
+				}
+				if cf.CpuinfoMaximumFrequency != nil {
+					maxTotal += float64(*cf.CpuinfoMaximumFrequency) / 1000.0
+					maxCount++
+				}
+			}
+			if currentCount > 0 {
+				avgMhzStr = fmt.Sprintf("%d", int(currentTotal/float64(currentCount)))
+			}
+			if maxCount > 0 {
+				maxMhzStr = fmt.Sprintf("%d", int(maxTotal/float64(maxCount)))
+			}
 		}
 	}
-
-	var avgMhzStr string
-	if count > 0 {
-		avgMhz := totalMhz / float64(count)
-		avgMhzStr = fmt.Sprintf("%v", avgMhz)
-	} else {
-		avgMhzStr = "N/A"
-	}
-
-	maxMhzStr := "N/A"
 
 	if manufacturer == "" {
 		manufacturer = "N/A"
