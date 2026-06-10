@@ -1,5 +1,31 @@
 See: ./opencode/skills, ./opencode/agent
 
+# OpenCode
+- install: `pacman -Sy opencode xclip` // xclip is for copy+paste in opencode to work
+- `opencode --continue` - continue last session
+- `opencode debug config` - print effective config - all openconfig.jsonc files merged together
+- `opencode models` - list available provider/model
+- `opencode pr 123` - fetch PR #123 from github and run opencode; needs gh cli installed
+- `opencode run "what programming language is used in this project"` - run command and exit
+- in opencode:
+    - `/init` - create AGENTS.md
+    - `/undo`, `/redo` - revert/restore last change - uses git so project must be git-controlled
+    - `!ls` - run shell command
+    - `ctrl+x e` - open editor to write long prompt
+    - `ctrl+p` - open menu, e.g. eg to select llm model
+    - `@main.go` - attach file contents to context
+- `opencode.jsonc`
+    - global: `~/.config/opencode/opencode.jsonc`
+    - project: `./opencode.jsonc`
+    - what can be configured in opencode.jsonc:
+        - allowed tools like "write", "bash", "glob"
+        - available providers and models like ollama:qwen3.7
+        - preconfigured agents and commands (literally inline definitions)
+        - instructions (paths to files with instructions like AGENTS.md or CLAUDE.md)
+        - MCP servers
+        - plugins
+        - Language Server Protocols; `add "lsp": true` and gopls is available to opencode
+
 ## Creating skill
 
 https://agentskills.io/skill-creation/best-practices
