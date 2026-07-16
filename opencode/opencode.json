@@ -1,0 +1,19 @@
+{
+  "$schema":"https://opencode.ai/config.json",
+  "lsp":true,
+  "plugin":[
+    "superpowers@git+https://github.com/obra/superpowers.git"
+  ],
+  "mcp":{
+    "pdf-mcp":{
+      "type":"local",
+      "command":[
+        "pdf-mcp"
+      ]
+    },
+    "czyjesteldorado": {
+      "type": "remote",
+      "url": "https://czyjesteldorado.pl/_mcp"
+    }
+  }
+}
