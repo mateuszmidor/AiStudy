@@ -1,11 +1,56 @@
-See: ./opencode/skills, ./opencode/agent
+See: [.opencode/skills](.opencode/skills), [.opencode/agents](.opencode/agents)
 
 # OpenCode
-- install: `pacman -Sy opencode xclip` // xclip is for copy+paste in opencode to work
+
+## Install
+```sh
+# install opencode
+pacman -Sy opencode
+
+# enable text copy+paste in opencode
+pacman -Sy xclip
+
+# install local MCP for reading PDFs
+pacman -Sy python-pip python-pipx
+pipx ensurepath
+pipx install 'pdf-mcp[multicolumn]'
+bash # open new shell to have pdf-mcp available
+```
+
+## Config
+In `$HOME/.config/opencode/opencode.jsonc`:
+```json
+{
+  "$schema":"https://opencode.ai/config.json",
+  "lsp":true,
+  "plugin":[
+    "superpowers@git+https://github.com/obra/superpowers.git"
+  ],
+  "mcp":{
+    "pdf-mcp":{
+      "type":"local",
+      "command":[
+        "pdf-mcp"
+      ]
+    },
+    "czyjesteldorado": {
+      "type": "remote",
+      "url": "https://czyjesteldorado.pl/_mcp"
+    }
+  }
+}
+```
+The above config will enable opencode with:
+- Language Server Protocol (gopls)
+- additional set of agent skills (superpowers)
+- reading PDF files (json-mcp)
+- finding new jobs :)
+
+## Use it
 - `opencode --continue` - continue last session
 - `opencode debug config` - print effective config - all openconfig.jsonc files merged together
 - `opencode models` - list available provider/model
-- `opencode pr 123` - fetch PR #123 from github and run opencode; needs gh cli installed
+- `opencode pr 123` - fetch PR #123 from github and run opencode; needs gh cli installed and authorized in github
 - `opencode run "what programming language is used in this project"` - run command and exit
 - in opencode:
     - `/init` - create AGENTS.md
@@ -25,6 +70,9 @@ See: ./opencode/skills, ./opencode/agent
         - MCP servers
         - plugins
         - Language Server Protocols; `add "lsp": true` and gopls is available to opencode
+
+## OpenSpec - AI-coding framework
+See: [../openspec](../openspec/)
 
 ## Creating skill
 
