@@ -1,8 +1,5 @@
 {
   "$schema": "https://opencode.ai/config.json",
-  "model": "opencode/minimax-m2.5-free",
-  "lsp": true,
-  "plugin": ["superpowers@git+https://github.com/obra/superpowers.git"],
   "provider": {
     "ollama": {
       "npm": "@ai-sdk/openai-compatible",
@@ -28,12 +25,6 @@
           "tools": true
         }
       }
-    }
-  },
-  "mcp": {
-    "czyjesteldorado": {
-      "type": "remote",
-      "url": "https://czyjesteldorado.pl/_mcp"
     }
   }
 }
