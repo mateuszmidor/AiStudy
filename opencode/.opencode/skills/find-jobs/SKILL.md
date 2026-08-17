@@ -5,12 +5,15 @@ description: This skill is dedicated for finding and listing job offers in IT. U
 
 # Find Jobs Skill
 
-This skill fetches current job listings from the MCP server "czyjesteldorado", applies precise filters, and presents results as a Markdown list.
+This skill fetches current job listings from the available MCP servers, applies precise filters, and presents results as a Markdown list.
 
 ## Step-by-Step Instructions
 
 ### Step 1 — Fetch offers via MCP
-In order to fetch current job offers for Golang developers, it is obligatory to contact MCP server "czyjesteldorado" with required phrases ["Go", "Golang"] and excluded phrases ["Frontend", "Fullstack", "QA", "SRE", "DevOps", "Manager"]. IMPORTANT: double check with MCP for details on how to build search phrase with include and exclude rules, before asking the MCP for job offers.
+In order to fetch current job offers for Golang developers, it is obligatory to contact offer-providing MCP servers with required phrases ["Go", "Golang"] and excluded phrases ["Frontend", "Fullstack", "QA", "SRE", "DevOps", "Manager"]. If user asks for specific MCP server - use it. I no MCP is specified - request offers from all available MCP servers and merge the results by simply concatenating the lists. IMPORTANT:
+* double check with MCP for details on how to build search phrase with include and exclude rules, before asking the MCP for job offers.
+* if the result returned from MCP is long and gets truncated - just read the entire result from file (from beginning to the end) into the current context without delegating to subagents.
+* duplicate offers are fine
 
 ### Step 2 — go through the offers one by one and filter by seniority
 **Keep** offers where the declared seniority is one of:
