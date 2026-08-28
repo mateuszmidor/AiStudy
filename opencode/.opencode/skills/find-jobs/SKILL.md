@@ -38,10 +38,11 @@ Contact the server to fetch the offers. IMPORTANT:
 * double check with the MCP for details on supported filtering parameters before asking the MCP for job offers.
 * if the result returned from MCP is long and gets truncated - read the entire result from file (from beginning to the end) into the current context without delegating to subagents.
 
-### Step 3 — Filter by location (current server's results)
+### Step 3 — Filter offers by location (current server's results)
 
-- If offer has **work mode** = **fully remote** -> always KEEP
-- If offer has **work mode** = **office** or **hybrid** and location one of ["Gdańsk", "Sopot", "Gdynia", "Trójmiasto"] -> always KEEP
+Analyze EVERY offer and either KEEP or DISCARD according to below rules:
+- If offer has **work mode** = **fully remote** -> KEEP
+- If offer has **work mode** = **office** or **hybrid** AND location is one of ["Gdańsk", "Sopot", "Gdynia", "Trójmiasto"] -> KEEP
 - In all other cases -> DISCARD
 
 ### Step 4 — Collect data per offer (current server's results)
