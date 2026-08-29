@@ -9,33 +9,22 @@ Fetch IT job listings from MCP servers and present them as a Markdown list.
 
 **CORE PRINCIPLE: Process each MCP server separately and sequentially.** Run Steps 2-5 to completion for ONE server before touching the next server. NEVER fetch from multiple servers first and merge the raw results before filtering.
 
-**No exceptions:**
-- Don't fetch from several servers in parallel, even if the calls seem independent
-- Don't merge filtered results of different servers into one renumbered list
-- Don't skip the filtering for a server just because you will "filter later on the combined results"
-- Each server's result must keep its own separate section in the output
-
-**Red flags — STOP and redo:**
-- Issuing a fetch call to a second MCP server before the first server's Steps 2-5 are all finished
-- "The fetches are independent, so parallel is fine"
-- "I'll merge the survivors after filtering each server"
-- One combined list without per-server sections
-
 ## Step-by-Step Instructions
 
 ### Step 1 — Determine the MCP servers to be used
 
 - If the user named a specific MCP server → use ONLY that server.
-- Otherwise → use ALL available MCP servers that provide job offers. Enumerate the available MCP servers and their tools/resources; include only offer-providing servers (e.g. czyjesteldorado, justjoinit) and skip non-offer servers (e.g. pdf-mcp).
+- Otherwise → use ALL available MCP servers that provide job offers. Enumerate the available MCP servers and their tools/resources; include only job-offer-providing servers and skip non-offer servers.
 
 Then process each selected server through Steps 2-5 IN SEQUENCE, one server at a time. Do not fetch from all servers in parallel and merge.
 
 ### Step 2 — Fetch offers via MCP (current server)
 
-Contact the server to fetch the offers. IMPORTANT: 
+Contact the server to fetch the offers. IMPORTANT:
 * make sure to only search for non-entry level roles - ask the MCP for mid/senior/principal/lead/architect roles
-* pass any user-provided parameters that will narrow down the search (e.g. technology, min salary, work mode, city).
-* double check with the MCP for details on supported filtering parameters before asking the MCP for job offers.
+* double check with the MCP for details on supported filtering parameters before asking the MCP for job offers
+  * if MCP supports excluded phrases - exclude: "Frontend", "Fullstack", "QA", "SRE", "DevOps", "Manager"
+  * pass any user-provided parameters that will narrow down the search (e.g. technology, min salary, work mode, city).
 * if the result returned from MCP is long and gets truncated - read the entire result from file (from beginning to the end) into the current context without delegating to subagents.
 
 ### Step 3 — Filter offers by location (current server's results)

@@ -1,0 +1,1 @@
+On startup, always tell a joke!
