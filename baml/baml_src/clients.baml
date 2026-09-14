@@ -4,5 +4,6 @@ client<llm> GPT4oMini {
   options {
     model "gpt-4o-mini"
     api_key env.OPENAI_API_KEY
+    temperature 2.0
   }
 }

@@ -104,18 +104,18 @@ class City {
   country string
 }
 
-function GetRandomCity() -> City {
+function GetRandomCity(country: string) -> City {
   client GPT4oMini              // which connection to use
   prompt #"
     {{ _.role("user") }}
-    Pick one random city...     // your actual User prompt
+    Pick one random city in {{ country }}.
     {{ ctx.output_format }}     // macro: injects the JSON schema for City
   "#
 }
 
 test RandomCityTest {
   functions [GetRandomCity]
-  args {}
+  args { country "China" }
 }
 ```
 
@@ -161,9 +161,9 @@ import baml "baml/baml_client"
 cfg := baml.NewConfiguration()
 b := baml.NewAPIClient(cfg).DefaultAPI
 
-req := baml.NewGetRandomCityRequest()
+req := baml.NewGetRandomCityRequest("China")
 resp, _, err := b.GetRandomCity(context.Background()).GetRandomCityRequest(*req).Execute()
-fmt.Println(resp.City, resp.Country)   // e.g. "Kyoto Japan"
+fmt.Println(resp.City, resp.Country)
 ```
 
 The generated code's exact method name/conventions come from *your* `function`
@@ -175,7 +175,7 @@ function, inspect `baml_client/api_default.go` to see its generated signature.
 ```bash
 go mod tidy     # pulls validator.v2 etc. the generated client needs
 go run main.go
-# 2026/09/14 20:08:07 Random city: Kyoto, Japan
+# 2026/09/14 20:08:07 Random city: Chengdu, China
 ```
 
 ---

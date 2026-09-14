@@ -3,13 +3,13 @@ class City {
   country string @description("Country the city is located in")
 }
 
-function GetRandomCity() -> City {
+function GetRandomCity(country: string) -> City {
   client GPT4oMini
   prompt #"
     {# start a user message #}
     {{ _.role("user") }}
 
-    Pick one random city from the world where it is currently 12.00PM
+    Pick one random city in {{ country }}.
 
     {# special macro to print the output schema instructions. #}
     {{ ctx.output_format }}
@@ -18,5 +18,5 @@ function GetRandomCity() -> City {
 
 test RandomCityTest {
   functions [GetRandomCity]
-  args {}
+  args { country "China" }
 }

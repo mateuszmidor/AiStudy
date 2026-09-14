@@ -10,10 +10,9 @@ import (
 
 func main() {
 	cfg := baml.NewConfiguration()
-	// The BAML preview server runs on http://localhost:2024 (default)
-	b := baml.NewAPIClient(cfg).DefaultAPI
+	b := baml.NewAPIClient(cfg).DefaultAPI // The BAML preview server runs on http://localhost:2024 (default)
 
-	req := baml.NewGetRandomCityRequest()
+	req := baml.NewGetRandomCityRequest("China")
 	resp, r, err := b.GetRandomCity(context.Background()).GetRandomCityRequest(*req).Execute()
 	if err != nil {
 		fmt.Printf("Error when calling GetRandomCity: %v\n", err)
