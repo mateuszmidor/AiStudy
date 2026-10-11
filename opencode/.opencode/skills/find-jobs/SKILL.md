@@ -15,7 +15,7 @@ Extract from the user's message: technology, min salary, work mode, city, contra
 
 - User named a specific server → use ONLY that one.
 - Not named → ask the user to pick: **CzyJestEldorado** or **JustJoin.it**.
-- User asked for **both** → run both fetches in the same turn (they are independent) and dedupe the final list by title + company, since the boards overlap.
+- Don't offer using both server simultaneously, dont recommend any of them.
 
 ## Step 3 — Build the query
 
