@@ -27,14 +27,7 @@ Contact the server to fetch the offers. IMPORTANT:
   * pass any user-provided parameters that will narrow down the search (e.g. technology, min salary, work mode, city).
 * if the result returned from MCP is long and gets truncated - read the entire result from file (from beginning to the end) into the current context without delegating to subagents.
 
-### Step 3 — Filter offers by location (current server's results)
-
-Analyze EVERY offer and either KEEP or DISCARD according to below rules:
-- If offer has **work mode** = **fully remote** -> KEEP
-- If offer has **work mode** = **office** or **hybrid** AND location is one of ["Gdańsk", "Sopot", "Gdynia", "Trójmiasto"] -> KEEP
-- In all other cases -> DISCARD
-
-### Step 4 — Collect data per offer (current server's results)
+### Step 3 — Collect data per offer (current server's results)
 
 For each remaining offer, collect:
 
@@ -48,7 +41,7 @@ For each remaining offer, collect:
 | Technologies | Comma-separated, highlight Go/Golang first |
 | Link | Clickable markdown link |
 
-### Step 5 — Format output for this server
+### Step 4 — Format output for this server
 
 For THIS server, produce its own Markdown section with a heading `## <Server Name>` and a separate ordered list starting at 1 (numbering restarts at 1 inside each `##` section; never continue numbering across sections); use 'N/A' where salary or location is not provided in the offer. Once this server's list is complete, move to the next server and repeat Steps 2-5. The final answer contains one `##` section per server, in the order processed. Never merge the per-server sections into a single renumbered list (duplicates across servers are fine, keep them in their own sections).
 
