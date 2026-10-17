@@ -24,9 +24,9 @@ rules:
     # - Must use spec-as-source skill
 
 operations:
-  apply:
-    guidance:
-      - Must use test-driven-development skill
+  # apply:
+  #   guidance:
+  #     - Must use test-driven-development skill
   archive:
     guidance:
       - Must run OpenSpec Sync before archiving
